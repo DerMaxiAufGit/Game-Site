@@ -128,11 +128,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 6/6 | Complete | 2026-02-11 |
-| 2. Core Game Engine (Kniffel MVP) | 5/11 | In progress | - |
+| 2. Core Game Engine (Kniffel MVP) | 10/11 | In progress | - |
 | 3. Virtual Currency & Betting | 0/TBD | Not started | - |
 | 4. Additional Games | 0/TBD | Not started | - |
 | 5. Polish & Community | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-11*
-*Last updated: 2026-02-11 (Plan 02-08 complete: Chat and spectator features)*
+*Last updated: 2026-02-11 (Plan 02-09 complete: Core game loop with state machine integration)*
