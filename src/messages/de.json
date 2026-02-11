@@ -1,0 +1,71 @@
+{
+  "common": {
+    "loading": "Laden...",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "back": "Zurück",
+    "confirm": "Bestätigen",
+    "error": "Fehler",
+    "success": "Erfolgreich"
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "register": "Registrieren",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "username": "Benutzername",
+    "displayName": "Anzeigename",
+    "setup": "Einrichtung",
+    "setupTitle": "Willkommen bei Kniff",
+    "setupDescription": "Erstelle deinen Admin-Account um loszulegen.",
+    "loginTitle": "Anmelden",
+    "loginDescription": "Melde dich mit deinen Zugangsdaten an.",
+    "registerTitle": "Registrieren",
+    "registerDescription": "Erstelle deinen Account über die Einladung.",
+    "invalidCredentials": "Ungültige Anmeldedaten",
+    "accountBanned": "Dein Account wurde gesperrt",
+    "inviteExpired": "Diese Einladung ist abgelaufen",
+    "inviteUsed": "Diese Einladung wurde bereits verwendet",
+    "inviteNotFound": "Einladung nicht gefunden",
+    "passwordMin": "Mindestens 8 Zeichen",
+    "setupAlreadyDone": "Ein Admin existiert bereits"
+  },
+  "admin": {
+    "dashboard": "Admin-Dashboard",
+    "overview": "Übersicht",
+    "users": "Nutzer",
+    "invites": "Einladungen",
+    "totalUsers": "Nutzer gesamt",
+    "activeNow": "Gerade online",
+    "pendingInvites": "Offene Einladungen",
+    "inviteUser": "Nutzer einladen",
+    "sendEmail": "Per E-Mail senden",
+    "generateLink": "Link generieren",
+    "banUser": "Nutzer sperren",
+    "unbanUser": "Nutzer entsperren",
+    "banReason": "Grund (optional)",
+    "banned": "Gesperrt",
+    "active": "Aktiv",
+    "role": "Rolle",
+    "createdAt": "Erstellt am",
+    "actions": "Aktionen",
+    "inviteSent": "Einladung gesendet",
+    "inviteCopied": "Einladungslink kopiert",
+    "userBanned": "Nutzer wurde gesperrt",
+    "userUnbanned": "Nutzer wurde entsperrt"
+  },
+  "nav": {
+    "lobby": "Spielelobby",
+    "admin": "Administration",
+    "settings": "Einstellungen",
+    "connectionOnline": "Verbunden",
+    "connectionOffline": "Getrennt"
+  },
+  "lobby": {
+    "title": "Spielelobby",
+    "comingSoon": "Spiele kommen bald",
+    "comingSoonDescription": "Hier werden bald Spieltische erscheinen. Bleib dran!"
+  }
+}
