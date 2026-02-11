@@ -381,23 +381,29 @@ app.prepare().then(() => {
 
     // Handle room list request
     socket.on('room:list', (callback) => {
-      callback(roomManager.getPublicRooms())
+      callback({ success: true, rooms: roomManager.getPublicRooms() })
     })
 
     // Handle room creation
-    socket.on('room:create', ({ settings }, callback) => {
-      const room = roomManager.createRoom(
-        socket.data.userId,
-        socket.data.displayName,
-        settings
-      )
-      socket.join(room.id)
-      callback({
-        roomId: room.id,
-        room: roomManager.getPublicRooms().find(r => r.id === room.id)
-      })
-      // Broadcast updated room list to lobby
-      io.emit('room:list-update', roomManager.getPublicRooms())
+    socket.on('room:create', (settings, callback) => {
+      try {
+        const room = roomManager.createRoom(
+          socket.data.userId,
+          socket.data.displayName,
+          settings
+        )
+        socket.join(room.id)
+        callback({
+          success: true,
+          roomId: room.id,
+          room: roomManager.getPublicRooms().find(r => r.id === room.id)
+        })
+        // Broadcast updated room list to lobby
+        io.emit('room:list-update', roomManager.getPublicRooms())
+      } catch (error) {
+        console.error('room:create error:', error.message)
+        callback({ success: false, error: error.message })
+      }
     })
 
     // Handle room join
