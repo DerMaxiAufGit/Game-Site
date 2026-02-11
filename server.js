@@ -234,6 +234,26 @@ app.prepare().then(() => {
     }
   })
 
+  // Helper function to send system messages
+  function sendSystemMessage(roomId, content) {
+    const room = roomManager.getRoom(roomId)
+    if (!room) return
+
+    const message = {
+      id: randomUUID(),
+      roomId,
+      userId: 'system',
+      displayName: 'System',
+      content,
+      isSystem: true,
+      timestamp: Date.now()
+    }
+
+    room.chat.push(message)
+    if (room.chat.length > 100) room.chat.shift()
+    io.to(roomId).emit('chat:message', message)
+  }
+
   // Socket.IO connection handling
   io.on('connection', (socket) => {
     console.log(
@@ -279,11 +299,13 @@ app.prepare().then(() => {
         displayName: socket.data.displayName,
         spectator: result.spectator || false
       })
+      sendSystemMessage(roomId, `${socket.data.displayName} ist beigetreten`)
       io.emit('room:list-update', roomManager.getPublicRooms())
     })
 
     // Handle room leave
     socket.on('room:leave', ({ roomId }, callback) => {
+      sendSystemMessage(roomId, `${socket.data.displayName} hat den Raum verlassen`)
       const room = roomManager.leaveRoom(roomId, socket.data.userId)
       socket.leave(roomId)
       if (room) {
@@ -303,8 +325,11 @@ app.prepare().then(() => {
         callback?.({ error: 'Not host' })
         return
       }
+      const targetPlayer = room.players.find(p => p.userId === targetUserId)
+      const targetName = targetPlayer?.displayName || 'Spieler'
       roomManager.leaveRoom(roomId, targetUserId)
       io.to(roomId).emit('room:player-kicked', { userId: targetUserId })
+      sendSystemMessage(roomId, `${targetName} wurde entfernt`)
       io.emit('room:list-update', roomManager.getPublicRooms())
       callback?.({ success: true })
     })
@@ -319,10 +344,63 @@ app.prepare().then(() => {
       }
     })
 
+    // Handle chat message send
+    socket.on('chat:send', ({ roomId, content }, callback) => {
+      const room = roomManager.getRoom(roomId)
+      if (!room) {
+        callback?.({ error: 'Room not found' })
+        return
+      }
+
+      // Verify user is in room (player or spectator)
+      const isInRoom = room.players.some(p => p.userId === socket.data.userId)
+        || room.spectators.includes(socket.data.userId)
+      if (!isInRoom) {
+        callback?.({ error: 'Not in room' })
+        return
+      }
+
+      // Sanitize content (trim, max 500 chars, no empty)
+      const sanitized = content?.trim().slice(0, 500)
+      if (!sanitized) {
+        callback?.({ error: 'Empty message' })
+        return
+      }
+
+      const message = {
+        id: randomUUID(),
+        roomId,
+        userId: socket.data.userId,
+        displayName: socket.data.displayName,
+        content: sanitized,
+        isSystem: false,
+        timestamp: Date.now()
+      }
+
+      // Store in room chat history (keep last 100 messages)
+      room.chat.push(message)
+      if (room.chat.length > 100) room.chat.shift()
+
+      // Broadcast to room
+      io.to(roomId).emit('chat:message', message)
+      callback?.({ success: true })
+    })
+
+    // Handle chat history request
+    socket.on('chat:history', ({ roomId }, callback) => {
+      const room = roomManager.getRoom(roomId)
+      if (!room) {
+        callback?.([])
+        return
+      }
+      callback?.(room.chat || [])
+    })
+
     socket.on('disconnect', () => {
       console.log(`Client disconnected: ${socket.data.userId}`)
       const affectedRooms = roomManager.removeUserFromAllRooms(socket.data.userId)
       for (const room of affectedRooms) {
+        sendSystemMessage(room.id, `${socket.data.displayName} hat den Raum verlassen`)
         io.to(room.id).emit('room:player-left', { userId: socket.data.userId })
       }
       io.emit('room:list-update', roomManager.getPublicRooms())
