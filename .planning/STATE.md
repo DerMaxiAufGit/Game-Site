@@ -12,27 +12,27 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 Phase: 2 of 5 (Core Game Engine)
 Plan: 10 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 02-10-PLAN.md (Timers and rematch)
+Last activity: 2026-02-11 — Completed 02-09-PLAN.md (Core game loop)
 
-Progress: [██████████████████░] 28% (14/50 total plans complete, 10/11 Phase 2 plans complete)
+Progress: [██████████████████░] 30% (15/50 total plans complete, 10/11 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 9.9 min
-- Total execution time: 2.3 hours
+- Total plans completed: 15
+- Average duration: 9.7 min
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 10/11 | 26 min | 2.6 min |
+| 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 2min, 4min, 4min, 4min
-- Trend: Phase 2 maintaining exceptional velocity - complex server logic and UI both ~4min
+- Last 5 plans: 2min, 4min, 4min, 4min, 5min
+- Trend: Phase 2 maintaining exceptional velocity - avg 3min per plan
 
 *Updated after each plan completion*
 
@@ -98,6 +98,10 @@ Recent decisions affecting current work:
 - Rematch resets to waiting room (02-10): Clear gameState, reset isReady, emit rematch-accepted/declined
 - GameResults podium styling (02-10): Gold/silver/bronze for top 3, trophy/medal icons
 - RematchVote progress indicator (02-10): Visual bar showing votedYes / required threshold
+- tsx for TypeScript imports (02-09): Use tsx to run server.js with TS module imports, simplest approach
+- Server delegates to state machine (02-09): All game logic via applyAction, createInitialState from imported modules
+- Ready toggle in waiting phase (02-09): game:player-ready toggles directly, not via state machine (room-level concept)
+- Filter ready players on start (02-09): game:start moves non-ready to spectators before creating initial state
 
 ### Pending Todos
 
@@ -114,6 +118,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-10-PLAN.md (Timers and rematch)
+Stopped at: Completed 02-09-PLAN.md (Core game loop)
 Resume file: None
 Next: Complete Phase 2 with final plan (02-11: end-to-end verification and UAT)
