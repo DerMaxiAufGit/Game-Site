@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 2 of 5 (Core Game Engine)
-Plan: 8 of 11 in current phase
+Plan: 10 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 02-07-PLAN.md (Game room page with UI components)
+Last activity: 2026-02-11 — Completed 02-10-PLAN.md (Timers and rematch)
 
-Progress: [████████████████░] 24% (12/50 total plans complete, 8/11 Phase 2 plans complete)
+Progress: [██████████████████░] 28% (14/50 total plans complete, 10/11 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 10.8 min
-- Total execution time: 2.2 hours
+- Total plans completed: 14
+- Average duration: 9.9 min
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 8/11 | 18 min | 2.3 min |
+| 2 (Game Engine) | 10/11 | 26 min | 2.6 min |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 3min, 3min, 2min, 4min
-- Trend: Phase 2 maintaining exceptional velocity - complex UI components as fast as pure logic
+- Last 5 plans: 3min, 2min, 4min, 4min, 4min
+- Trend: Phase 2 maintaining exceptional velocity - complex server logic and UI both ~4min
 
 *Updated after each plan completion*
 
@@ -92,6 +92,12 @@ Recent decisions affecting current work:
 - Dynamic import for R3F components (02-07): ssr: false prevents Next.js SSR errors with React Three Fiber
 - Server timestamp sync for timer (02-07): Calculate from server's turnStartedAt to prevent client drift
 - Scoresheet view modes (02-07): Compact (own scores) and full table (all players) with toggle button
+- Auto-play uses imported autoPickCategory (02-10): Zero inline scoring duplication, single source of truth
+- Turn timer auto-rolls if needed (02-10): Check rollsRemaining === 3, auto-roll before picking category
+- AFK kick adjusts game state (02-10): Remove player, end game if <2 remain, adjust currentPlayerIndex
+- Rematch resets to waiting room (02-10): Clear gameState, reset isReady, emit rematch-accepted/declined
+- GameResults podium styling (02-10): Gold/silver/bronze for top 3, trophy/medal icons
+- RematchVote progress indicator (02-10): Visual bar showing votedYes / required threshold
 
 ### Pending Todos
 
@@ -108,6 +114,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-07-PLAN.md (Game room page with UI components)
+Stopped at: Completed 02-10-PLAN.md (Timers and rematch)
 Resume file: None
-Next: Continue Phase 2 with remaining plans (02-09: core game loop, 02-10: timers/AFK, 02-11: verification)
+Next: Complete Phase 2 with final plan (02-11: end-to-end verification and UAT)
