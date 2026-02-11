@@ -113,7 +113,7 @@ describe('calculateScore', () => {
 
     it('returns 0 for invalid straights', () => {
       expect(calculateScore('smallStraight', [1, 2, 4, 5, 6])).toBe(0)
-      expect(calculateScore('smallStraight', [1, 3, 4, 5, 6])).toBe(0)
+      expect(calculateScore('smallStraight', [1, 2, 2, 5, 6])).toBe(0)
       expect(calculateScore('smallStraight', [1, 1, 1, 1, 1])).toBe(0)
     })
 
