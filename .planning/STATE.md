@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 2 of 5 (Core Game Engine)
-Plan: 1 of 5 in current phase
+Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 02-01-PLAN.md (Foundation: GameRoom model, types, RNG, 3D deps)
+Last activity: 2026-02-11 — Completed 02-02-PLAN.md (Kniffel scoring algorithm with TDD)
 
-Progress: [████████████░░] 14% (7/50 total plans complete, 1/5 Phase 2 plans complete)
+Progress: [█████████████░] 16% (8/50 total plans complete, 2/5 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 16.3 min
-- Total execution time: 1.9 hours
+- Total plans completed: 8
+- Average duration: 15.4 min
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 1/5 | 3 min | 3.0 min |
+| 2 (Game Engine) | 2/5 | 7 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 5min, 18min, 62min, 3min
-- Trend: Quick foundation plan (02-01) establishing Phase 2 base types and dependencies
+- Last 5 plans: 5min, 18min, 62min, 3min, 4min
+- Trend: Fast TDD plan (02-02) for pure business logic with comprehensive tests
 
 *Updated after each plan completion*
 
@@ -67,6 +67,10 @@ Recent decisions affecting current work:
 - Cryptographic RNG server-side (02-01): Use node:crypto randomInt for CSPRNG dice rolling
 - Comprehensive type system upfront (02-01): Define all game types early to unblock parallel plans
 - Early 3D dependency installation (02-01): Install three.js and R3F in foundation to unblock Plan 02-02
+- Frequency counting for scoring (02-02): Build counts[1..6] array for efficient pattern detection in Kniffel
+- Full house edge case (02-02): Must be exactly 3+2, not 4 or 5 of same kind
+- Auto-pick tie-breaking (02-02): Prefer lower section categories when multiple score same points
+- TDD RED-GREEN-REFACTOR (02-02): Write failing tests, implement to pass, refactor - atomic commits per phase
 
 ### Pending Todos
 
@@ -79,11 +83,10 @@ None yet.
 - Next.js 16 middleware deprecation warning (will need to rename to proxy.ts in future version)
 - USER-SETUP.md created for Phase 1: Resend and PostgreSQL configuration needed (see 01-USER-SETUP.md)
 - **Database migration required:** GameRoom model added to schema but not pushed to database. Run `npx prisma db push` or `npx prisma migrate dev` before using game features
-- Test file ahead of implementation: kniffel-rules.test.ts exists but implementation doesn't (planned for future Phase 2 plan)
 
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-01-PLAN.md (Phase 2 foundation setup)
+Stopped at: Completed 02-02-PLAN.md (Kniffel scoring algorithm with TDD)
 Resume file: None
-Next: Continue Phase 2 with Plan 02-02 (3D Dice Scene) or other parallel plans
+Next: Continue Phase 2 with remaining plans (02-03 Game State Machine, 02-04 Dice Simulation, 02-05 Game Room API)
