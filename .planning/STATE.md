@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 2 of 5 (Core Game Engine)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 02-02-PLAN.md (Kniffel scoring algorithm with TDD)
+Last activity: 2026-02-11 — Completed 02-03-PLAN.md (Game state machine with TDD)
 
-Progress: [█████████████░] 16% (8/50 total plans complete, 2/5 Phase 2 plans complete)
+Progress: [███████████████░] 18% (9/50 total plans complete, 3/5 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 15.4 min
-- Total execution time: 2.1 hours
+- Total plans completed: 9
+- Average duration: 13.7 min
+- Total execution time: 2.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 2/5 | 7 min | 3.5 min |
+| 2 (Game Engine) | 3/5 | 9 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 18min, 62min, 3min, 4min
-- Trend: Fast TDD plan (02-02) for pure business logic with comprehensive tests
+- Last 5 plans: 62min, 3min, 4min, 2min, 3min
+- Trend: Phase 2 maintaining fast execution (TDD plans: 4min, 3min avg)
 
 *Updated after each plan completion*
 
@@ -71,6 +71,15 @@ Recent decisions affecting current work:
 - Full house edge case (02-02): Must be exactly 3+2, not 4 or 5 of same kind
 - Auto-pick tie-breaking (02-02): Prefer lower section categories when multiple score same points
 - TDD RED-GREEN-REFACTOR (02-02): Write failing tests, implement to pass, refactor - atomic commits per phase
+- Direct index mapping for kept dice (02-03): keptDice[i] = true keeps state.dice[i], false uses newDice[i]
+- Return Error objects not throw (02-03): Functional paradigm, errors are values for type safety
+- Round increments when all players complete (02-03): Prevents premature advancement if players at different paces
+- Pure state machine functions (02-03): No side effects, caller generates randomness via crypto RNG
+- In-memory room storage (02-04): Use Map for room state, no DB writes during gameplay for performance
+- UUID room IDs (02-04): node:crypto randomUUID for secure, unguessable room identifiers
+- Spectator mode (02-04): Users joining in-progress games become spectators, not players
+- Host reassignment (02-04): First player becomes host when original host leaves
+- Real-time lobby updates (02-04): Broadcast room:list-update on all changes, no polling needed
 
 ### Pending Todos
 
@@ -87,6 +96,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-02-PLAN.md (Kniffel scoring algorithm with TDD)
+Stopped at: Completed 02-03-PLAN.md (Game state machine with TDD)
 Resume file: None
-Next: Continue Phase 2 with remaining plans (02-03 Game State Machine, 02-04 Dice Simulation, 02-05 Game Room API)
+Next: Continue Phase 2 with remaining plans (02-05 Game Room API)
