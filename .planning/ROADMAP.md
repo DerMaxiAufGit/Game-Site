@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffolding, database schema, and core auth library
+- [x] 01-01-PLAN.md — Project scaffolding, database schema, and core auth library (Complete: 2026-02-11)
 - [ ] 01-02-PLAN.md — Auth pages (admin setup, login, invite registration)
 - [ ] 01-03-PLAN.md — App shell with sidebar and WebSocket infrastructure
 - [ ] 01-04-PLAN.md — Admin dashboard with invite management and ban/unban
@@ -116,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/5 | Planned | - |
+| 1. Foundation & Infrastructure | 1/5 | In progress | - |
 | 2. Core Game Engine (Kniffel MVP) | 0/TBD | Not started | - |
 | 3. Virtual Currency & Betting | 0/TBD | Not started | - |
 | 4. Additional Games | 0/TBD | Not started | - |
@@ -124,4 +124,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 ---
 *Roadmap created: 2026-02-11*
-*Last updated: 2026-02-11*
+*Last updated: 2026-02-11 (Plan 01-01 complete)*
