@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 2 of 5 (Core Game Engine)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-02-11 — Completed 02-03-PLAN.md (Game state machine with TDD)
+Last activity: 2026-02-11 — Completed 02-05-PLAN.md (3D dice scene with physics)
 
-Progress: [███████████████░] 18% (9/50 total plans complete, 3/5 Phase 2 plans complete)
+Progress: [███████████████░] 20% (10/50 total plans complete, 4/5 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 13.7 min
-- Total execution time: 2.2 hours
+- Total plans completed: 10
+- Average duration: 12.4 min
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 3/5 | 9 min | 3.0 min |
+| 2 (Game Engine) | 4/5 | 12 min | 3.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 62min, 3min, 4min, 2min, 3min
-- Trend: Phase 2 maintaining fast execution (TDD plans: 4min, 3min avg)
+- Last 5 plans: 3min, 4min, 2min, 3min, 3min
+- Trend: Phase 2 maintaining exceptional velocity - 3D component creation as fast as pure logic
 
 *Updated after each plan completion*
 
@@ -80,6 +80,10 @@ Recent decisions affecting current work:
 - Spectator mode (02-04): Users joining in-progress games become spectators, not players
 - Host reassignment (02-04): First player becomes host when original host leaves
 - Real-time lobby updates (02-04): Broadcast room:list-update on all changes, no polling needed
+- Canvas texture die faces (02-05): Procedural generation eliminates image assets, fully customizable
+- Physics impulse rolling (02-05): Rapier impulse/torque for realistic tumbling, 3s auto-snap ensures completion
+- Kinematic kept dice (02-05): Switch to kinematic RigidBody prevents kept dice from moving during roll
+- Green glow kept state (02-05): Emissive green matches app accent, clearly distinguishes kept dice
 
 ### Pending Todos
 
@@ -96,6 +100,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-03-PLAN.md (Game state machine with TDD)
+Stopped at: Completed 02-05-PLAN.md (3D dice scene with physics)
 Resume file: None
-Next: Continue Phase 2 with remaining plans (02-05 Game Room API)
+Next: Continue Phase 2 with remaining plan (game room integration, UI components)
