@@ -60,12 +60,12 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Database schema, game types, 3D dependencies, German translations (Complete: 2026-02-11)
 - [x] 02-02-PLAN.md — Kniffel scoring algorithm (TDD) (Complete: 2026-02-11)
-- [ ] 02-03-PLAN.md — Game state machine (TDD)
+- [x] 02-03-PLAN.md — Game state machine (TDD) (Complete: 2026-02-11)
 - [x] 02-04-PLAN.md — Room lifecycle server handlers (Socket.IO) (Complete: 2026-02-11)
-- [ ] 02-05-PLAN.md — 3D dice scene (React Three Fiber + Rapier physics)
+- [x] 02-05-PLAN.md — 3D dice scene (React Three Fiber + Rapier physics) (Complete: 2026-02-11)
 - [ ] 02-06-PLAN.md — Lobby UI with room browsing and creation
 - [ ] 02-07-PLAN.md — Game room page with scoresheet and turn timer
-- [ ] 02-08-PLAN.md — Table chat and spectator mode
+- [x] 02-08-PLAN.md — Table chat and spectator mode (Complete: 2026-02-11)
 - [ ] 02-09-PLAN.md — Core game loop: server handlers using state machine and scoring imports
 - [ ] 02-10-PLAN.md — Turn timers, auto-play, AFK detection, rematch voting, results UI
 - [ ] 02-11-PLAN.md — Full game verification checkpoint
@@ -128,11 +128,11 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 6/6 | Complete | 2026-02-11 |
-| 2. Core Game Engine (Kniffel MVP) | 3/11 | In progress | - |
+| 2. Core Game Engine (Kniffel MVP) | 5/11 | In progress | - |
 | 3. Virtual Currency & Betting | 0/TBD | Not started | - |
 | 4. Additional Games | 0/TBD | Not started | - |
 | 5. Polish & Community | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-11*
-*Last updated: 2026-02-11 (Phase 2 revised: 11 plans in 5 waves)*
+*Last updated: 2026-02-11 (Plan 02-08 complete: Chat and spectator features)*
