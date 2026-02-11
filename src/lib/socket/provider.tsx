@@ -7,18 +7,25 @@ import { getSocket } from './client'
 interface SocketContextValue {
   socket: Socket | null
   isConnected: boolean
+  userId: string | null
 }
 
 const SocketContext = createContext<SocketContextValue>({
   socket: null,
   isConnected: false,
+  userId: null,
 })
 
 export function useSocket() {
   return useContext(SocketContext)
 }
 
-export function SocketProvider({ children }: { children: React.ReactNode }) {
+interface SocketProviderProps {
+  children: React.ReactNode
+  userId: string
+}
+
+export function SocketProvider({ children, userId }: SocketProviderProps) {
   const socketRef = useRef<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
 
@@ -78,6 +85,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       value={{
         socket: socketRef.current,
         isConnected,
+        userId,
       }}
     >
       {children}

@@ -11,7 +11,7 @@ export default async function AppLayout({
   const session = await getSession()
 
   return (
-    <SocketProvider>
+    <SocketProvider userId={session.userId}>
       <div className="min-h-screen bg-zinc-950">
         {/* Desktop Sidebar */}
         <Sidebar user={session} />
