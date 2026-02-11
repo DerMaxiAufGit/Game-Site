@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 2 of 5 (Core Game Engine)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-02-11 — Completed 02-05-PLAN.md (3D dice scene with physics)
+Plan: 5 of 5 in current phase
+Status: Phase 2 complete
+Last activity: 2026-02-11 — Completed 02-08-PLAN.md (Chat and spectator features)
 
-Progress: [███████████████░] 20% (10/50 total plans complete, 4/5 Phase 2 plans complete)
+Progress: [███████████████░] 22% (11/50 total plans complete, 5/5 Phase 2 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 12.4 min
-- Total execution time: 2.3 hours
+- Total plans completed: 11
+- Average duration: 11.5 min
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
-| 2 (Game Engine) | 4/5 | 12 min | 3.0 min |
+| 2 (Game Engine) | 5/5 | 14 min | 2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 4min, 2min, 3min, 3min
-- Trend: Phase 2 maintaining exceptional velocity - 3D component creation as fast as pure logic
+- Last 5 plans: 4min, 2min, 3min, 3min, 2min
+- Trend: Phase 2 complete with exceptional velocity - realtime features as fast as pure logic
 
 *Updated after each plan completion*
 
@@ -84,6 +84,10 @@ Recent decisions affecting current work:
 - Physics impulse rolling (02-05): Rapier impulse/torque for realistic tumbling, 3s auto-snap ensures completion
 - Kinematic kept dice (02-05): Switch to kinematic RigidBody prevents kept dice from moving during roll
 - Green glow kept state (02-05): Emissive green matches app accent, clearly distinguishes kept dice
+- Chat message 500-char limit (02-08): Prevents abuse, keeps chat performant
+- Room chat history 100 messages (02-08): Balance between context and memory usage
+- Spectators included in chat (02-08): Creates "Stammtisch" atmosphere where everyone can talk
+- System messages on game events (02-08): Join/leave/kick broadcast with isSystem flag for styling
 
 ### Pending Todos
 
@@ -100,6 +104,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-11 (plan execution)
-Stopped at: Completed 02-05-PLAN.md (3D dice scene with physics)
+Stopped at: Completed 02-08-PLAN.md (Chat and spectator features) - Phase 2 complete
 Resume file: None
-Next: Continue Phase 2 with remaining plan (game room integration, UI components)
+Next: Phase 3 - Game Integration (integrate game engine with UI, connect all components)
