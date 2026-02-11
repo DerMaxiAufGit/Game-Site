@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Gamepad2, Shield } from 'lucide-react'
 import { UserMenu } from './user-menu'
+import { ConnectionStatus } from './connection-status'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
 
@@ -70,11 +71,9 @@ export function Sidebar({ user }: SidebarProps) {
         })}
       </nav>
 
-      {/* Connection Status Placeholder - will be populated in Task 2 */}
+      {/* Connection Status */}
       <div className="p-4 border-t border-white/10">
-        <div className="mb-3 text-xs text-gray-500">
-          {/* ConnectionStatus will be inserted here in Task 2 */}
-        </div>
+        <ConnectionStatus />
       </div>
 
       {/* User Menu */}
