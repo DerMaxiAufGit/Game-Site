@@ -64,7 +64,7 @@ Plans:
 - [x] 02-04-PLAN.md — Room lifecycle server handlers (Socket.IO) (Complete: 2026-02-11)
 - [x] 02-05-PLAN.md — 3D dice scene (React Three Fiber + Rapier physics) (Complete: 2026-02-11)
 - [x] 02-06-PLAN.md — Lobby UI with room browsing and creation (Complete: 2026-02-11)
-- [ ] 02-07-PLAN.md — Game room page with scoresheet and turn timer
+- [x] 02-07-PLAN.md — Game room page with scoresheet and turn timer (Complete: 2026-02-11)
 - [x] 02-08-PLAN.md — Table chat and spectator mode (Complete: 2026-02-11)
 - [ ] 02-09-PLAN.md — Core game loop: server handlers using state machine and scoring imports
 - [ ] 02-10-PLAN.md — Turn timers, auto-play, AFK detection, rematch voting, results UI
