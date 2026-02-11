@@ -98,44 +98,44 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | — | Pending |
-| AUTH-02 | — | Pending |
-| AUTH-03 | — | Pending |
-| AUTH-04 | — | Pending |
-| AUTH-05 | — | Pending |
-| AUTH-06 | — | Pending |
-| GUTH-01 | — | Pending |
-| GUTH-02 | — | Pending |
-| GUTH-03 | — | Pending |
-| GUTH-04 | — | Pending |
-| GUTH-05 | — | Pending |
-| GUTH-06 | — | Pending |
-| RAUM-01 | — | Pending |
-| RAUM-02 | — | Pending |
-| RAUM-03 | — | Pending |
-| RAUM-04 | — | Pending |
-| RAUM-05 | — | Pending |
-| SPIEL-01 | — | Pending |
-| SPIEL-02 | — | Pending |
-| SPIEL-03 | — | Pending |
-| SPIEL-04 | — | Pending |
-| SPIEL-05 | — | Pending |
-| SPIEL-06 | — | Pending |
-| SPIEL-07 | — | Pending |
-| SPIEL-08 | — | Pending |
-| ECHT-01 | — | Pending |
-| ECHT-02 | — | Pending |
-| ECHT-03 | — | Pending |
-| UI-01 | — | Pending |
-| UI-02 | — | Pending |
-| UI-03 | — | Pending |
-| UI-04 | — | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| AUTH-06 | Phase 1 | Pending |
+| ECHT-01 | Phase 1 | Pending |
+| ECHT-02 | Phase 1 | Pending |
+| UI-01 | Phase 1 | Pending |
+| UI-02 | Phase 1 | Pending |
+| RAUM-01 | Phase 2 | Pending |
+| RAUM-02 | Phase 2 | Pending |
+| RAUM-03 | Phase 2 | Pending |
+| RAUM-04 | Phase 2 | Pending |
+| RAUM-05 | Phase 2 | Pending |
+| SPIEL-01 | Phase 2 | Pending |
+| SPIEL-07 | Phase 2 | Pending |
+| SPIEL-08 | Phase 2 | Pending |
+| ECHT-03 | Phase 2 | Pending |
+| GUTH-01 | Phase 3 | Pending |
+| GUTH-02 | Phase 3 | Pending |
+| GUTH-03 | Phase 3 | Pending |
+| GUTH-04 | Phase 3 | Pending |
+| GUTH-05 | Phase 3 | Pending |
+| GUTH-06 | Phase 3 | Pending |
+| SPIEL-02 | Phase 4 | Pending |
+| SPIEL-03 | Phase 4 | Pending |
+| SPIEL-04 | Phase 4 | Pending |
+| SPIEL-05 | Phase 4 | Pending |
+| SPIEL-06 | Phase 4 | Pending |
+| UI-03 | Phase 5 | Pending |
+| UI-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 32 total
-- Mapped to phases: 0
-- Unmapped: 32 ⚠️
+- Mapped to phases: 32/32
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-11*
-*Last updated: 2026-02-11 after initial definition*
+*Last updated: 2026-02-11 after roadmap creation*
