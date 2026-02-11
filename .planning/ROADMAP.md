@@ -32,10 +32,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Admin can ban and unban users
   6. All UI labels and messages display in German
   7. Interface is responsive and usable on mobile devices
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- TBD during phase planning
+- [ ] 01-01-PLAN.md — Project scaffolding, database schema, and core auth library
+- [ ] 01-02-PLAN.md — Auth pages (admin setup, login, invite registration)
+- [ ] 01-03-PLAN.md — App shell with sidebar and WebSocket infrastructure
+- [ ] 01-04-PLAN.md — Admin dashboard with invite management and ban/unban
+- [ ] 01-05-PLAN.md — Full flow verification checkpoint
 
 ### Phase 2: Core Game Engine (Kniffel MVP)
 **Goal**: Players can play Kniffel in real-time at shared tables
@@ -112,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation & Infrastructure | 0/TBD | Not started | - |
+| 1. Foundation & Infrastructure | 0/5 | Planned | - |
 | 2. Core Game Engine (Kniffel MVP) | 0/TBD | Not started | - |
 | 3. Virtual Currency & Betting | 0/TBD | Not started | - |
 | 4. Additional Games | 0/TBD | Not started | - |
