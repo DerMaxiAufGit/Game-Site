@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface RoomData extends RoomInfo {
+  players: { userId: string; displayName: string; isReady: boolean }[]
+  spectators: string[]
   gameState?: GameState
 }
 
