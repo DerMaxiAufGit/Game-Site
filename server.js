@@ -275,7 +275,7 @@ function clearTurnTimer(roomId) {
 }
 
 // Auto-play on timeout using imported autoPickCategory
-function autoPlay(roomId, io) {
+async function autoPlay(roomId, io) {
   const room = roomManager.getRoom(roomId)
   if (!room || !room.gameState || room.gameState.phase === 'ended') return
   const gs = room.gameState
@@ -1083,7 +1083,7 @@ app.prepare().then(() => {
     })
 
     // Handle category selection
-    socket.on('game:choose-category', ({ roomId, category }, callback) => {
+    socket.on('game:choose-category', async ({ roomId, category }, callback) => {
       const room = roomManager.getRoom(roomId)
       if (!room || !room.gameState) {
         callback?.({ error: 'No game' })
@@ -1239,7 +1239,7 @@ app.prepare().then(() => {
     })
 
     // Handle game start
-    socket.on('game:start', ({ roomId, force }, callback) => {
+    socket.on('game:start', async ({ roomId, force }, callback) => {
       const room = roomManager.getRoom(roomId)
       if (!room) {
         callback?.({ error: 'Room not found' })
