@@ -61,6 +61,11 @@ export interface RoomSettings {
   isPrivate: boolean
   turnTimer: number // 30, 60, or 90
   afkThreshold: number // consecutive inactive rounds
+  isBetRoom: boolean // true = bet room, false = free room (NOT just betAmount=0)
+  betAmount?: number // buy-in per player (only if isBetRoom)
+  minBet?: number // room min bet (optional override)
+  maxBet?: number // room max bet (optional override)
+  payoutRatios?: { position: number; percentage: number }[] // custom payout ratios
 }
 
 // Room info for lobby display
@@ -76,6 +81,12 @@ export interface RoomInfo {
   currentPlayers: number
   playerNames: string[]
   createdAt: string
+  isBetRoom: boolean
+  betAmount: number // 0 for free rooms
+  minBet: number // 0 if not set
+  maxBet: number // 0 if not set
+  totalPot: number // current pot (betAmount * activePlayers in bet rooms)
+  payoutRatios: { position: number; percentage: number }[]
 }
 
 // Chat message
