@@ -136,6 +136,10 @@ Recent decisions affecting current work:
 - Payout ratio client validation (03-06): Sum-to-100% check with inline error prevents invalid submission
 - [Phase 03]: Recharts for balance visualization: Industry-standard React charting library
 - [Phase 03]: TransferDialog reusable component: Can be triggered from player cards or any user view
+- AFK grace period in bet rooms (03-08): 30-second warning before kick/forfeit prevents accidental losses
+- Player card transfer integration (03-08): TransferDialog accessible from PlayerList during waiting/ended phases
+- Pot display during gameplay (03-08): Animated pot display on game board for transparency in bet rooms
+- Detailed payout breakdown (03-08): Per-player payouts with positions shown on results screen
 - Real-time balance notification via Socket.IO (03-09): Admin adjustments trigger socket events for instant user balance updates
 - Custom starting balance per invite (03-09): Optional customStartingBalance field on Invite model enables per-invite overrides
 - Alert thresholds configurable via SystemSettings (03-09): Live economy tuning for suspicious activity detection sensitivity
@@ -155,6 +159,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12 (plan execution)
-Stopped at: Completed 03-09-PLAN.md (Admin balance management tools)
+Stopped at: Completed 03-08-PLAN.md (Escrow-integrated game lifecycle) and 03-09-PLAN.md (Admin balance management tools)
 Resume file: None
 Next: Continue Phase 3 with Plan 03-10 (final plan in phase)
