@@ -7,14 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Trophy, Medal, ChevronDown, ChevronUp } from 'lucide-react'
+import { PayoutBreakdown } from '@/components/betting/payout-breakdown'
+
+interface PayoutEntry {
+  userId: string
+  displayName: string
+  position: number
+  amount: number
+}
 
 interface GameResultsProps {
   players: PlayerState[]
   winnerId: string | null
   currentUserId: string
+  payouts?: PayoutEntry[] | null
 }
 
-export function GameResults({ players, winnerId, currentUserId }: GameResultsProps) {
+export function GameResults({ players, winnerId, currentUserId, payouts }: GameResultsProps) {
   const [showDetails, setShowDetails] = useState(false)
 
   // Calculate rankings
@@ -57,6 +66,11 @@ export function GameResults({ players, winnerId, currentUserId }: GameResultsPro
           </p>
         </CardContent>
       </Card>
+
+      {/* Payout Breakdown (if bet room) */}
+      {payouts && payouts.length > 0 && (
+        <PayoutBreakdown payouts={payouts} currencyName="Chips" />
+      )}
 
       {/* Rankings Table */}
       <Card className="border-gray-700 bg-gray-800/50">

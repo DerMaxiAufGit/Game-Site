@@ -3,21 +3,28 @@
 import type { PlayerState } from '@/types/game'
 import { calculateTotalScore } from '@/lib/game/kniffel-rules'
 import { Badge } from '@/components/ui/badge'
-import { Circle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Circle, Send } from 'lucide-react'
+import { TransferDialog } from '@/components/wallet/transfer-dialog'
 
 interface PlayerListProps {
   players: PlayerState[]
   currentPlayerIndex: number
   currentUserId: string
   spectatorCount?: number
+  gamePhase?: string
 }
 
 export function PlayerList({
   players,
   currentPlayerIndex,
   currentUserId,
-  spectatorCount = 0
+  spectatorCount = 0,
+  gamePhase = 'waiting'
 }: PlayerListProps) {
+  // Show transfer button only when NOT in active gameplay (waiting or ended)
+  const showTransferButton = gamePhase === 'waiting' || gamePhase === 'ended'
+
   return (
     <div className="flex flex-wrap gap-3 rounded-lg bg-gray-800/50 p-4">
       {players.map((player, index) => {
@@ -28,7 +35,7 @@ export function PlayerList({
         return (
           <div
             key={player.userId}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 ${
+            className={`group flex items-center gap-2 rounded-lg px-3 py-2 ${
               isCurrentTurn
                 ? 'bg-green-600/20 ring-2 ring-green-500'
                 : 'bg-gray-900/50'
@@ -59,6 +66,25 @@ export function PlayerList({
                 {score} Punkte
               </span>
             </div>
+
+            {/* Transfer Button (only for other players, only when not actively playing) */}
+            {!isCurrentUser && showTransferButton && (
+              <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <TransferDialog
+                  recipientId={player.userId}
+                  recipientName={player.displayName}
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 hover:bg-green-600/20 hover:text-green-400"
+                    >
+                      <Send className="h-3 w-3" />
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </div>
         )
       })}
