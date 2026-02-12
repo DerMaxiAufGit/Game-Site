@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 3 of 5 (Virtual Currency Betting)
-Plan: 2 of 10 in current phase
+Plan: 1 of 10 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 03-02-PLAN.md (Payout calculator & escrow state machine)
+Last activity: 2026-02-12 — Completed 03-01-PLAN.md (Core wallet infrastructure)
 
-Progress: [██████████████████░░] 32% (16/50 total plans complete, 2/10 Phase 3 plans complete)
+Progress: [██████████████████░░] 32% (16/50 total plans complete, 1/10 Phase 3 plans complete)
 
 ## Performance Metrics
 
@@ -29,13 +29,15 @@ Progress: [██████████████████░░] 32% (16
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
-| 3 (Virtual Currency) | 2/10 | 1 min | 0.5 min |
+| 3 (Virtual Currency) | 1/10 | 2.9 min | 2.9 min |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 4min, 4min, 5min, 1min
-- Trend: Phase 3 starting with exceptional velocity
+- Last 5 plans: 4min, 4min, 4min, 5min, 2.9min
+- Trend: Phase 3 starting with strong velocity
 
 *Updated after each plan completion*
+
+| Phase 03 P01 | 174s (2.9min) | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -103,9 +105,10 @@ Recent decisions affecting current work:
 - Server delegates to state machine (02-09): All game logic via applyAction, createInitialState from imported modules
 - Ready toggle in waiting phase (02-09): game:player-ready toggles directly, not via state machine (room-level concept)
 - Filter ready players on start (02-09): game:start moves non-ready to spectators before creating initial state
-- [Phase 03]: Pure payout calculator using integer arithmetic to avoid floating point precision issues
-- [Phase 03]: Transition table pattern for escrow state machine provides clear validation logic
-- [Phase 03]: Sole finisher gets entire pot regardless of configured ratios (edge case handling)
+- Serializable isolation for balance ops (03-01): Prisma interactive transactions with Serializable isolation prevent race conditions
+- Lazy wallet initialization (03-01): Create wallet with starting balance on first access, no migration needed
+- Frozen wallets asymmetric (03-01): Can receive (transfers, wins, claims) but cannot send (bets, transfers)
+- Transaction ledger immutable (03-01): All balance changes create transaction records with type, amount, description, metadata
 
 ### Pending Todos
 
@@ -122,6 +125,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12 (plan execution)
-Stopped at: Completed 03-02-PLAN.md (Payout calculator & escrow state machine)
+Stopped at: Completed 03-01-PLAN.md (Core wallet infrastructure)
 Resume file: None
-Next: Continue Phase 3 with Plan 03 (wallet transaction handlers)
+Next: Continue Phase 3 with Plan 03-02 (Payout calculator & escrow state machine)
