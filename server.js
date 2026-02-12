@@ -9,6 +9,7 @@ import { PrismaClient } from '@prisma/client'
 import { applyAction, createInitialState } from './src/lib/game/state-machine.js'
 import { autoPickCategory, calculateScore, calculateTotalScore } from './src/lib/game/kniffel-rules.js'
 import { rollDice } from './src/lib/game/crypto-rng.js'
+import { getWalletWithUser, getTransactionHistory } from './src/lib/wallet/transactions.js'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -374,11 +375,55 @@ app.prepare().then(() => {
     io.to(roomId).emit('chat:message', message)
   }
 
+  // Helper function to emit balance updates
+  function emitBalanceUpdate(io, userId, newBalance, change, description) {
+    io.to(`user:${userId}`).emit('balance:updated', {
+      newBalance,
+      change,
+      description
+    })
+  }
+
   // Socket.IO connection handling
   io.on('connection', (socket) => {
     console.log(
       `Client connected: ${socket.data.userId} (${socket.data.role})`
     )
+
+    // Join user-specific room for balance updates
+    socket.join(`user:${socket.data.userId}`)
+
+    // Handle wallet balance request
+    socket.on('wallet:get-balance', async (callback) => {
+      try {
+        const wallet = await getWalletWithUser(socket.data.userId)
+        callback?.({
+          success: true,
+          balance: wallet.balance,
+          currencyName: 'Chips' // TODO: Get from SystemSettings
+        })
+      } catch (error) {
+        console.error('wallet:get-balance error:', error.message)
+        callback?.({ success: false, error: error.message })
+      }
+    })
+
+    // Handle recent transactions request
+    socket.on('wallet:recent-transactions', async (callback) => {
+      try {
+        const transactions = await getTransactionHistory(socket.data.userId, { limit: 3 })
+        const formattedTransactions = transactions.map(tx => ({
+          type: tx.type,
+          amount: tx.amount,
+          description: tx.description,
+          createdAt: tx.createdAt
+        }))
+        callback?.(formattedTransactions)
+      } catch (error) {
+        console.error('wallet:recent-transactions error:', error.message)
+        callback?.([])
+      }
+    })
 
     // Handle room list request
     socket.on('room:list', (callback) => {
