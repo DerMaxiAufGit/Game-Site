@@ -181,7 +181,10 @@ export async function getAdminTransactionLog(options?: {
     : null
 
   return {
-    transactions: items,
+    transactions: items.map((item) => ({
+      ...item,
+      createdAt: item.createdAt.toISOString(),
+    })),
     nextCursor,
   }
 }
@@ -671,7 +674,7 @@ export async function getUsersWithWallets(search?: string) {
     username: user.username,
     email: user.email,
     balance: user.wallet?.balance || 0,
-    frozenAt: user.wallet?.frozenAt || null,
+    frozenAt: user.wallet?.frozenAt?.toISOString() || null,
   }))
 }
 
@@ -681,7 +684,7 @@ interface SuspiciousAlert {
   userId: string
   displayName: string
   details: string
-  timestamp: Date
+  timestamp: string
 }
 
 /**
@@ -727,7 +730,7 @@ export async function getSuspiciousActivity(): Promise<SuspiciousAlert[]> {
       userId: tx.userId,
       displayName: tx.user.displayName,
       details: `Transfer von ${tx.amount} (Limit: ${alertTransferLimit})`,
-      timestamp: tx.createdAt,
+      timestamp: tx.createdAt.toISOString(),
     })
   }
 
@@ -760,7 +763,7 @@ export async function getSuspiciousActivity(): Promise<SuspiciousAlert[]> {
       userId: item.user_id,
       displayName: item.display_name,
       details: `Tagessumme: ${total} (Limit: ${transferDailyLimit})`,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     })
   }
 
@@ -829,14 +832,14 @@ export async function getSuspiciousActivity(): Promise<SuspiciousAlert[]> {
           userId: wallet.userId,
           displayName: wallet.user.displayName,
           details: `Von ${previousBalance} auf ${wallet.balance} (-${dropPct.toFixed(0)}%)`,
-          timestamp: new Date(),
+          timestamp: new Date().toISOString(),
         })
       }
     }
   }
 
   // Sort by timestamp desc
-  alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+  alerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
   return alerts
 }
