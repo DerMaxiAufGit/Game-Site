@@ -4,7 +4,7 @@ import { RoomInfo } from '@/types/game'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Users, Crown, Clock } from 'lucide-react'
+import { Users, Crown, Clock, Coins } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface RoomCardProps {
@@ -66,6 +66,16 @@ export function RoomCard({ room, onJoin, currentUserId }: RoomCardProps) {
             <Badge className={statusBadge.color} variant="outline">
               {statusBadge.text}
             </Badge>
+            {room.isBetRoom ? (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 flex items-center gap-1">
+                <Coins className="h-3 w-3" />
+                {room.betAmount} Chips
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
+                Kostenlos
+              </Badge>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -91,6 +101,23 @@ export function RoomCard({ room, onJoin, currentUserId }: RoomCardProps) {
           <div className="text-sm">
             <span className="text-gray-400">Spieler: </span>
             <span className="text-white">{room.playerNames.join(', ')}</span>
+          </div>
+        )}
+
+        {/* Bet room info */}
+        {room.isBetRoom && (
+          <div className="space-y-1 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400">Pot:</span>
+              <span className="text-amber-500 font-medium">{room.totalPot} Chips</span>
+            </div>
+            {(room.minBet > 0 || room.maxBet > 0) && (
+              <div className="text-xs text-gray-400">
+                {room.minBet > 0 && `Min: ${room.minBet}`}
+                {room.minBet > 0 && room.maxBet > 0 && ' / '}
+                {room.maxBet > 0 && `Max: ${room.maxBet}`}
+              </div>
+            )}
           </div>
         )}
       </CardContent>

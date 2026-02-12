@@ -7,9 +7,10 @@ import { RoomInfo } from '@/types/game'
 import { RoomCard } from '@/components/lobby/room-card'
 import { LobbyHeader } from '@/components/lobby/lobby-header'
 import { CreateRoomDialog } from '@/components/lobby/create-room-dialog'
-import { Gamepad2 } from 'lucide-react'
+import { Gamepad2, Coins } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
+import { Badge } from '@/components/ui/badge'
 
 export default function LobbyPage() {
   const t = useTranslations()
@@ -19,6 +20,7 @@ export default function LobbyPage() {
   const [rooms, setRooms] = useState<RoomInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'bet'>('all')
 
   // Fetch room list on mount and when rooms update
   useEffect(() => {
@@ -67,6 +69,17 @@ export default function LobbyPage() {
     })
   }
 
+  // Filter rooms based on active filter
+  const filteredRooms = rooms.filter((room) => {
+    if (activeFilter === 'free') return !room.isBetRoom
+    if (activeFilter === 'bet') return room.isBetRoom
+    return true // 'all'
+  })
+
+  // Count rooms by type
+  const freeRoomsCount = rooms.filter(r => !r.isBetRoom).length
+  const betRoomsCount = rooms.filter(r => r.isBetRoom).length
+
   // Loading state
   if (isLoading) {
     return (
@@ -87,10 +100,50 @@ export default function LobbyPage() {
         isConnected={isConnected}
       />
 
+      {/* Filter tabs */}
+      {rooms.length > 0 && (
+        <div className="flex gap-2 mb-6">
+          <Badge
+            variant={activeFilter === 'all' ? 'default' : 'outline'}
+            className={`cursor-pointer px-4 py-2 text-sm ${
+              activeFilter === 'all'
+                ? 'bg-green-500 hover:bg-green-600'
+                : 'hover:bg-zinc-800'
+            }`}
+            onClick={() => setActiveFilter('all')}
+          >
+            Alle ({rooms.length})
+          </Badge>
+          <Badge
+            variant={activeFilter === 'free' ? 'default' : 'outline'}
+            className={`cursor-pointer px-4 py-2 text-sm ${
+              activeFilter === 'free'
+                ? 'bg-green-500 hover:bg-green-600'
+                : 'hover:bg-zinc-800'
+            }`}
+            onClick={() => setActiveFilter('free')}
+          >
+            Kostenlos ({freeRoomsCount})
+          </Badge>
+          <Badge
+            variant={activeFilter === 'bet' ? 'default' : 'outline'}
+            className={`cursor-pointer px-4 py-2 text-sm flex items-center gap-1 ${
+              activeFilter === 'bet'
+                ? 'bg-amber-500 hover:bg-amber-600'
+                : 'hover:bg-zinc-800'
+            }`}
+            onClick={() => setActiveFilter('bet')}
+          >
+            <Coins className="h-3 w-3" />
+            Einsatz ({betRoomsCount})
+          </Badge>
+        </div>
+      )}
+
       {/* Room grid */}
-      {rooms.length > 0 ? (
+      {filteredRooms.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room) => (
+          {filteredRooms.map((room) => (
             <RoomCard
               key={room.id}
               room={room}
@@ -98,6 +151,14 @@ export default function LobbyPage() {
               currentUserId={userId || ''}
             />
           ))}
+        </div>
+      ) : rooms.length > 0 ? (
+        // Empty filter state
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-3">
+            <p className="text-xl text-white">Keine Räume in dieser Kategorie</p>
+            <p className="text-gray-400">Versuche einen anderen Filter</p>
+          </div>
         </div>
       ) : (
         // Empty state
