@@ -1,7 +1,10 @@
 import { getSession } from '@/lib/auth/dal'
 import { getWalletData, getBalanceChartData, getTransactions } from '@/lib/actions/wallet'
+import { getSystemSettings } from '@/lib/wallet/transactions'
 import { BalanceChart } from '@/components/wallet/balance-chart'
 import { ClaimDaily } from '@/components/wallet/claim-daily'
+import { TransactionList } from '@/components/wallet/transaction-list'
+import { TransferForm } from '@/components/wallet/transfer-form'
 import { Coins } from 'lucide-react'
 
 // Prevent build-time DB queries
@@ -11,10 +14,11 @@ export default async function WalletPage() {
   const session = await getSession()
 
   // Fetch initial data in parallel
-  const [walletData, chartData, transactions] = await Promise.all([
+  const [walletData, chartData, transactions, settings] = await Promise.all([
     getWalletData(),
     getBalanceChartData(30),
     getTransactions({ limit: 50 }),
+    getSystemSettings(),
   ])
 
   return (
@@ -36,18 +40,21 @@ export default async function WalletPage() {
 
         {/* Two-column layout on desktop, single column on mobile */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left column: Chart and daily claim */}
+          {/* Left column: Chart, daily claim, and transfer form */}
           <div className="space-y-6">
             <BalanceChart data={chartData} />
             <ClaimDaily dailyClaimInfo={walletData.dailyClaimInfo} />
+            <TransferForm
+              maxAmount={settings.transferMaxAmount}
+              dailyLimit={settings.transferDailyLimit}
+              currencyName={walletData.currencyName}
+              isFrozen={walletData.wallet.frozenAt !== null}
+            />
           </div>
 
-          {/* Right column: Transactions (placeholder for Task 2) */}
-          <div className="bg-zinc-900 rounded-lg p-6 border border-zinc-800">
-            <h3 className="text-lg font-semibold mb-4">Transaktionen</h3>
-            <p className="text-gray-500 text-center py-12">
-              Transaction list will be added in Task 2
-            </p>
+          {/* Right column: Transaction list */}
+          <div>
+            <TransactionList initialTransactions={transactions} />
           </div>
         </div>
       </div>

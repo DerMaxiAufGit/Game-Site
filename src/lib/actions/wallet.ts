@@ -224,3 +224,60 @@ export async function getBalanceChartData(days?: number): Promise<BalanceHistory
 
   return getBalanceHistoryLib(session.userId, days)
 }
+
+/**
+ * Search users by username or display name
+ * For transfer recipient selection
+ */
+export async function searchUsers(query: string): Promise<
+  Array<{
+    id: string
+    username: string
+    displayName: string
+  }>
+> {
+  const session = await getSession()
+
+  if (!query || query.length < 2) {
+    return []
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      AND: [
+        {
+          id: {
+            not: session.userId, // Exclude self
+          },
+        },
+        {
+          OR: [
+            {
+              username: {
+                contains: query,
+                mode: 'insensitive',
+              },
+            },
+            {
+              displayName: {
+                contains: query,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+      ],
+    },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+    },
+    take: 10,
+    orderBy: {
+      username: 'asc',
+    },
+  })
+
+  return users
+}
