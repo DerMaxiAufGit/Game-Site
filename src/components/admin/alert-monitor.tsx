@@ -21,7 +21,7 @@ interface SuspiciousAlert {
   userId: string
   displayName: string
   details: string
-  timestamp: Date
+  timestamp: string
 }
 
 export function AlertMonitor() {

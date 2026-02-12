@@ -50,7 +50,7 @@ interface UserWithWallet {
   username: string
   email: string
   balance: number
-  frozenAt: Date | null
+  frozenAt: string | null
 }
 
 export function BalanceAdjust() {
@@ -156,7 +156,7 @@ export function BalanceAdjust() {
       const result = await freezeWallet(selectedUser.userId)
       if (result.success) {
         toast.success('Wallet eingefroren')
-        setSelectedUser({ ...selectedUser, frozenAt: new Date() })
+        setSelectedUser({ ...selectedUser, frozenAt: new Date().toISOString() })
       } else {
         toast.error(result.error || 'Fehler beim Einfrieren')
       }

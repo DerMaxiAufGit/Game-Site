@@ -33,7 +33,7 @@ interface Transaction {
   type: string
   amount: number
   description: string | null
-  createdAt: Date
+  createdAt: string
   user: {
     id: string
     displayName: string
@@ -73,7 +73,7 @@ const formatCurrency = (value: number) => {
   }).format(value)
 }
 
-const formatDate = (date: Date) => {
+const formatDate = (date: string) => {
   return new Intl.DateTimeFormat('de-DE', {
     day: '2-digit',
     month: '2-digit',
