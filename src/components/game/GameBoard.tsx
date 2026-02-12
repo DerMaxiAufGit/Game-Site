@@ -11,6 +11,8 @@ import { Card } from '@/components/ui/card'
 import { Dice2D } from './Dice2D'
 import { GameChat } from './GameChat'
 import { SpectatorBanner } from './SpectatorBanner'
+import { PotDisplay } from '@/components/betting/pot-display'
+import { AfkWarning } from '@/components/betting/afk-warning'
 import { LogOut, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -22,9 +24,11 @@ interface GameBoardProps {
   currentUserId: string
   hostId: string
   socket: Socket
+  isBetRoom?: boolean
+  betAmount?: number
 }
 
-export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: GameBoardProps) {
+export function GameBoard({ gameState, roomId, currentUserId, hostId, socket, isBetRoom = false, betAmount = 0 }: GameBoardProps) {
   const t = useTranslations()
   const router = useRouter()
   const [isAnimating, setIsAnimating] = useState(false)
@@ -34,6 +38,10 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
   const [confirmAbort, setConfirmAbort] = useState(false)
   const isHost = currentUserId === hostId
   const isSpectator = localGameState.spectators.includes(currentUserId)
+
+  // Calculate total pot for bet rooms
+  const activePlayerCount = localGameState.players.length
+  const totalPot = isBetRoom ? betAmount * activePlayerCount : 0
 
   // Update local game state when props change
   useEffect(() => {
@@ -130,8 +138,9 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
   return (
     <>
       <SpectatorBanner isSpectator={isSpectator} />
+      <AfkWarning />
       <div className="flex min-h-screen flex-col bg-gradient-to-br from-gray-900 to-gray-800">
-      {/* Top Bar: Player List + Actions */}
+      {/* Top Bar: Player List + Pot Display + Actions */}
       <div className="border-b border-gray-700 p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
@@ -140,8 +149,14 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
               currentPlayerIndex={localGameState.currentPlayerIndex}
               currentUserId={currentUserId}
               spectatorCount={localGameState.spectators.length}
+              gamePhase={localGameState.phase}
             />
           </div>
+          {isBetRoom && totalPot > 0 && (
+            <div className="shrink-0">
+              <PotDisplay totalPot={totalPot} currencyName="Chips" />
+            </div>
+          )}
           <div className="flex gap-2 shrink-0">
             {isHost && (
               confirmAbort ? (
