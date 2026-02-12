@@ -9,10 +9,12 @@ import { TurnTimer } from './TurnTimer'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dice2D } from './Dice2D'
+import { GameChat } from './GameChat'
+import { SpectatorBanner } from './SpectatorBanner'
 import { LogOut, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import type { GameState, ScoreCategory } from '@/types/game'
+import { GameState, ScoreCategory } from '@/types/game'
 
 interface GameBoardProps {
   gameState: GameState
@@ -31,6 +33,7 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [confirmAbort, setConfirmAbort] = useState(false)
   const isHost = currentUserId === hostId
+  const isSpectator = localGameState.spectators.includes(currentUserId)
 
   // Update local game state when props change
   useEffect(() => {
@@ -125,7 +128,9 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
   const canScore = isMyTurn && localGameState.rollsRemaining < 3 && !isAnimating
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-gray-900 to-gray-800">
+    <>
+      <SpectatorBanner isSpectator={isSpectator} />
+      <div className="flex min-h-screen flex-col bg-gradient-to-br from-gray-900 to-gray-800">
       {/* Top Bar: Player List + Actions */}
       <div className="border-b border-gray-700 p-4">
         <div className="flex items-center justify-between gap-4">
@@ -291,6 +296,12 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket }: 
           isCurrentPlayer={isMyTurn}
         />
       </div>
-    </div>
+      </div>
+      <GameChat
+        roomId={roomId}
+        socket={socket}
+        currentUserId={currentUserId}
+      />
+    </>
   )
 }
