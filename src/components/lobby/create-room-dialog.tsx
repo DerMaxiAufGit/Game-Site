@@ -52,6 +52,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
       isPrivate,
       turnTimer: parseInt(turnTimer, 10),
       afkThreshold: parseInt(afkThreshold, 10),
+      isBetRoom: false, // Default to free room for now, will be updated in Task 2
     }
 
     socket.emit('room:create', settings, (response: { success: boolean; roomId?: string; error?: string }) => {

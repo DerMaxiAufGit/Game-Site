@@ -35,8 +35,30 @@ class RoomManager {
     this.userRooms = new Map() // userId -> Set<roomId>
   }
 
-  createRoom(hostId, hostName, settings) {
+  async createRoom(hostId, hostName, settings) {
     const roomId = randomUUID()
+
+    // Get default payout ratios from SystemSettings if not provided
+    let payoutRatios = settings.payoutRatios
+    if (!payoutRatios && settings.isBetRoom) {
+      try {
+        const systemSettings = await prisma.systemSettings.findFirst()
+        payoutRatios = systemSettings?.defaultPayoutRatios || [
+          { position: 1, percentage: 60 },
+          { position: 2, percentage: 30 },
+          { position: 3, percentage: 10 }
+        ]
+      } catch (error) {
+        console.error('Failed to fetch default payout ratios:', error)
+        // Fallback to defaults
+        payoutRatios = [
+          { position: 1, percentage: 60 },
+          { position: 2, percentage: 30 },
+          { position: 3, percentage: 10 }
+        ]
+      }
+    }
+
     const room = {
       id: roomId,
       name: settings.name,
@@ -48,6 +70,11 @@ class RoomManager {
       maxPlayers: settings.maxPlayers || 6,
       turnTimer: settings.turnTimer || 60,
       afkThreshold: settings.afkThreshold || 3,
+      isBetRoom: settings.isBetRoom || false,
+      betAmount: settings.betAmount || 0,
+      minBet: settings.minBet || 0,
+      maxBet: settings.maxBet || 0,
+      payoutRatios: payoutRatios || [],
       players: [{ userId: hostId, displayName: hostName, isReady: false }],
       spectators: [],
       gameState: null,
@@ -125,7 +152,13 @@ class RoomManager {
         maxPlayers: r.maxPlayers,
         currentPlayers: r.players.length,
         playerNames: r.players.map(p => p.displayName),
-        createdAt: r.createdAt
+        createdAt: r.createdAt,
+        isBetRoom: r.isBetRoom || false,
+        betAmount: r.betAmount || 0,
+        minBet: r.minBet || 0,
+        maxBet: r.maxBet || 0,
+        totalPot: r.isBetRoom ? (r.betAmount * r.players.length) : 0,
+        payoutRatios: r.payoutRatios || []
       }))
   }
 
@@ -431,12 +464,30 @@ app.prepare().then(() => {
     })
 
     // Handle room creation
-    socket.on('room:create', (settings, callback) => {
+    socket.on('room:create', async (settings, callback) => {
       try {
         if (!settings || !settings.name) {
           return callback({ success: false, error: 'Invalid room settings' })
         }
-        const room = roomManager.createRoom(
+
+        // Validate bet settings
+        if (settings.isBetRoom) {
+          if (!settings.betAmount || settings.betAmount <= 0) {
+            return callback({ success: false, error: 'Bet rooms require a positive bet amount' })
+          }
+          // Validate min/max bet if provided
+          if (settings.minBet && settings.maxBet && settings.minBet > settings.maxBet) {
+            return callback({ success: false, error: 'Minimum bet cannot be greater than maximum bet' })
+          }
+          if (settings.minBet && settings.betAmount < settings.minBet) {
+            return callback({ success: false, error: 'Bet amount cannot be less than minimum bet' })
+          }
+          if (settings.maxBet && settings.betAmount > settings.maxBet) {
+            return callback({ success: false, error: 'Bet amount cannot be greater than maximum bet' })
+          }
+        }
+
+        const room = await roomManager.createRoom(
           socket.data.userId,
           socket.data.displayName,
           settings
