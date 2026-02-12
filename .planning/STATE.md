@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 3 of 5 (Virtual Currency Betting)
-Plan: 9 of 10 in current phase
+Plan: 11 of 12 in current phase
 Status: In progress
-Last activity: 2026-02-12 — Completed 03-09-PLAN.md (Admin balance management tools)
+Last activity: 2026-02-12 — Completed 03-11-PLAN.md (P2P transfer and room creation bug fixes)
 
-Progress: [████████████████████░] 42% (21/50 total plans complete, 7/10 Phase 3 plans complete)
+Progress: [████████████████████░] 44% (22/50 total plans complete, 9/12 Phase 3 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 6.4 min
-- Total execution time: 2.3 hours
+- Total plans completed: 22
+- Average duration: 6.0 min
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -29,7 +29,7 @@ Progress: [████████████████████░] 42% 
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
-| 3 (Virtual Currency) | 7/10 | 26.4 min | 3.8 min |
+| 3 (Virtual Currency) | 9/12 | 28.6 min | 3.2 min |
 
 **Recent Trend:**
 - Last 5 plans: 1.9min, 4.2min, 3.7min, 4.9min, 6.5min
@@ -45,6 +45,8 @@ Progress: [████████████████████░] 42% 
 | Phase 03 P07 | 292s (4.9min) | 2 tasks | 7 files |
 | Phase 03 P08 | 392s (6.5min) | 2 tasks | 12 files |
 | Phase 03 P09 | 391s (6.5min) | 2 tasks | 9 files |
+| Phase 03 P11 | 131s (2.2min) | 2 tasks | 3 files |
+| Phase 03 P11 | 131 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -143,6 +145,9 @@ Recent decisions affecting current work:
 - Real-time balance notification via Socket.IO (03-09): Admin adjustments trigger socket events for instant user balance updates
 - Custom starting balance per invite (03-09): Optional customStartingBalance field on Invite model enables per-invite overrides
 - Alert thresholds configurable via SystemSettings (03-09): Live economy tuning for suspicious activity detection sensitivity
+- [Phase 03]: Lazy wallet init in transaction context for P2P transfers
+- [Phase 03]: Single atomic transaction for transfers (not nested)
+- [Phase 03]: 5-second timeout on room creation via Promise.race
 
 ### Pending Todos
 
@@ -159,6 +164,6 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-12 (plan execution)
-Stopped at: Completed 03-08-PLAN.md (Escrow-integrated game lifecycle) and 03-09-PLAN.md (Admin balance management tools)
+Stopped at: Completed 03-11-PLAN.md (P2P transfer and room creation bug fixes)
 Resume file: None
-Next: Continue Phase 3 with Plan 03-10 (final plan in phase)
+Next: Continue Phase 3 with Plan 03-12 (final plan in phase)
