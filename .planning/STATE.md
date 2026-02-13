@@ -19,8 +19,8 @@ Progress: [█████████████████████] 52% 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25
-- Average duration: 5.6 min
+- Total plans completed: 26
+- Average duration: 5.5 min
 - Total execution time: 2.7 hours
 
 **By Phase:**
@@ -29,7 +29,7 @@ Progress: [█████████████████████] 52% 
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
-| 3 (Virtual Currency) | 13/14 | 45.2 min | 3.5 min |
+| 3 (Virtual Currency) | 14/14 | 48.7 min | 3.5 min |
 
 **Recent Trend:**
 - Last 5 plans: 4.9min, 6.5min, 3.4min, 3.5min, 4.05min
@@ -48,7 +48,6 @@ Progress: [█████████████████████] 52% 
 | Phase 03 P11 | 131s (2.2min) | 2 tasks | 3 files |
 | Phase 03 P12 | 206s (3.4min) | 2 tasks | 4 files |
 | Phase 03 P13 | 243s (4.05min) | 3 tasks | 1 file |
-| Phase 03 P13 | 209s (3.5min) | 2 tasks | 3 files |
 | Phase 03 P14 | 209s (3.5min) | 2 tasks | 3 files |
 
 ## Accumulated Context
