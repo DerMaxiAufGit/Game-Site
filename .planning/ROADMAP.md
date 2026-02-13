@@ -82,7 +82,7 @@ Plans:
   5. High-stakes bets show confirmation dialog before placement
   6. Admin can add or remove balance from any user
   7. All balance changes are logged in transaction history visible to admin
-**Plans**: 12 plans
+**Plans**: 14 plans
 
 Plans:
 - [ ] 03-01-PLAN.md — Database schema (Wallet, Transaction, BetEscrow, SystemSettings) and core wallet operations
@@ -97,6 +97,8 @@ Plans:
 - [ ] 03-10-PLAN.md — Full Phase 3 verification checkpoint
 - [x] 03-11-PLAN.md — Gap closure: atomic transfers with wallet lazy-init and room creation fix (Complete: 2026-02-12)
 - [x] 03-12-PLAN.md — Gap closure: admin finance hydration fix and date serialization (Complete: 2026-02-12)
+- [ ] 03-13-PLAN.md — Gap closure: room creator escrow, join idempotency, disconnect cleanup, turn timer scoping fix
+- [ ] 03-14-PLAN.md — Gap closure: pot display props, TransferDialog in waiting/ended, admin settings duplicate name fix
 
 ### Phase 4: Additional Games
 **Goal**: Full game suite with Poker, Blackjack, and Roulette available
@@ -140,10 +142,10 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation & Infrastructure | 6/6 | Complete | 2026-02-11 |
 | 2. Core Game Engine (Kniffel MVP) | 10/11 | In progress | - |
-| 3. Virtual Currency & Betting | 11/12 | In progress | - |
+| 3. Virtual Currency & Betting | 12/14 | In progress | - |
 | 4. Additional Games | 0/TBD | Not started | - |
 | 5. Polish & Community | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-11*
-*Last updated: 2026-02-12 (Phase 3 gap closure: 2 plans added for UAT bug fixes)*
+*Last updated: 2026-02-13 (Phase 3 gap closure round 2: 2 plans added for UAT round 2 bug fixes)*
