@@ -196,6 +196,10 @@ class RoomManager {
     }
   }
 
+  removeRoom(roomId) {
+    this.rooms.delete(roomId)
+  }
+
   _trackUser(userId, roomId) {
     if (!this.userRooms.has(userId)) this.userRooms.set(userId, new Set())
     this.userRooms.get(userId).add(roomId)
@@ -704,6 +708,44 @@ app.prepare().then(() => {
           roomManager.createRoom(socket.data.userId, socket.data.displayName, settings),
           timeoutPromise
         ])
+
+        // [ESCROW_CREATE_ROOM_CREATE] - Creator escrow for bet rooms
+        if (settings.isBetRoom) {
+          const wallet = await getWalletWithUser(socket.data.userId)
+          if (wallet.frozenAt !== null) {
+            roomManager.removeRoom(room.id)
+            return callback({ success: false, error: 'Wallet is frozen' })
+          }
+          if (wallet.balance < settings.betAmount) {
+            roomManager.removeRoom(room.id)
+            return callback({ success: false, error: 'Nicht genug Guthaben fuer den Einsatz' })
+          }
+
+          await prisma.$transaction(async (tx) => {
+            await tx.wallet.update({
+              where: { userId: socket.data.userId },
+              data: { balance: { decrement: settings.betAmount } }
+            })
+            await tx.transaction.create({
+              data: {
+                type: 'BET_PLACED',
+                amount: settings.betAmount,
+                userId: socket.data.userId,
+                description: `Einsatz: ${room.name}`
+              }
+            })
+            await tx.betEscrow.create({
+              data: {
+                roomId: room.id,
+                userId: socket.data.userId,
+                amount: settings.betAmount,
+                status: 'PENDING'
+              }
+            })
+          }, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 })
+
+          emitBalanceUpdate(io, socket.data.userId, wallet.balance - settings.betAmount, -settings.betAmount, `Einsatz: ${room.name}`)
+        }
 
         socket.join(room.id)
         callback({
