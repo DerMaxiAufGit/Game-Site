@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 4 of 5 (Additional Games)
-Plan: 2 of 11 in current phase
+Plan: 4 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-13 — Completed 04-02-PLAN.md (Game Type Selection Infrastructure)
+Last activity: 2026-02-13 — Completed 04-04-PLAN.md (Roulette State Machine TDD)
 
-Progress: [█████████████████████░] 58% (29/50 total plans complete, 2/11 Phase 4 plans complete)
+Progress: [█████████████████████░] 60% (30/50 total plans complete, 4/11 Phase 4 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
-- Average duration: 5.0 min
-- Total execution time: 2.9 hours
+- Total plans completed: 30
+- Average duration: 4.9 min
+- Total execution time: 3.0 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [█████████████████████░] 5
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
 | 3 (Virtual Currency) | 15/15 | 51.3 min | 3.4 min |
-| 4 (Additional Games) | 2/11 | 10.4 min | 5.2 min |
+| 4 (Additional Games) | 4/11 | 16.3 min | 4.1 min |
 
 **Recent Trend:**
-- Last 5 plans: 3.5min, 4.05min, 2.6min, 3.4min, 7.0min
-- Trend: Phase 4 progressing, game infrastructure established
+- Last 5 plans: 4.05min, 2.6min, 3.4min, 7.0min, 5.9min
+- Trend: TDD plans running ~6min (tests + implementation), infrastructure plans ~3-4min
 
 *Updated after each plan completion*
 
@@ -53,6 +53,7 @@ Progress: [█████████████████████░] 5
 | Phase 03 P15 | 158s (2.6min) | 2 tasks | 2 files |
 | Phase 04 P01 | 203s (3.4min) | 2 tasks | 10 files |
 | Phase 04 P02 | 420s (7.0min) | 2 tasks | 5 files |
+| Phase 04 P04 | 353s (5.9min) | 3 tasks (TDD) | 5 files |
 
 ## Accumulated Context
 
@@ -171,6 +172,10 @@ Recent decisions affecting current work:
 - Game-specific settings as optional fields (04-02): pokerSettings, blackjackSettings, rouletteSettings on RoomSettings
 - Game type guards on Kniffel handlers (04-02): Prevent cross-game action pollution with explicit type checks
 - Separate max player limits per game type (04-02): Kniffel 2-6, Blackjack 1-7, Roulette 1-10, Poker 2-9
+- European roulette wheel layout (04-04): 37 numbers (0-36) with correct red/black color assignments
+- Flexible calculateBetPayout parameter (04-04): Accepts single number or array for API convenience
+- Outside bet constant extraction (04-04): OUTSIDE_BETS array for DRY principle in validation
+- Adjacency validation for roulette bets (04-04): Grid-based logic for split/street/corner/line validation
 
 ### Pending Todos
 
@@ -186,7 +191,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13 17:30 UTC (Phase 4 execution started)
-Stopped at: Completed 04-01-PLAN.md (Casino Foundation). Card types, deck utilities, and casino UI components ready for game development.
+Last session: 2026-02-13 18:31 UTC (Phase 4 execution)
+Stopped at: Completed 04-04-PLAN.md (Roulette State Machine TDD). European roulette with all 13 bet types, adjacency validation, and payout calculation.
 Resume file: None
-Next: Continue Phase 4 execution with 04-02 (Poker) or subsequent plans
+Next: Continue Phase 4 execution with remaining plans (04-05 Poker onwards)
