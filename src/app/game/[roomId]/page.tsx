@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSocket } from '@/lib/socket/provider'
 import { WaitingRoom } from '@/components/game/WaitingRoom'
@@ -19,9 +19,17 @@ interface RoomData extends RoomInfo {
   gameState?: GameState
 }
 
+interface PayoutEntry {
+  userId: string
+  displayName: string
+  position: number
+  amount: number
+}
+
 interface GameEndData {
   winner: string
   scores: { userId: string; displayName: string; total: number }[]
+  payouts?: PayoutEntry[]
 }
 
 export default function GameRoomPage() {
@@ -37,8 +45,20 @@ export default function GameRoomPage() {
   const [gameEnd, setGameEnd] = useState<GameEndData | null>(null)
   const [pendingBetAmount, setPendingBetAmount] = useState<number | null>(null)
 
+  // Use refs for values needed inside the effect but that should NOT trigger re-runs
+  const balanceRef = useRef(balance)
+  balanceRef.current = balance
+  const routerRef = useRef(router)
+  routerRef.current = router
+  const joinedRef = useRef(false)
+
+  // Join room once when connected (separate from event listeners)
   useEffect(() => {
     if (!socket || !isConnected) return
+
+    // Prevent duplicate joins on re-renders
+    if (joinedRef.current) return
+    joinedRef.current = true
 
     // Check if user already confirmed in lobby
     const alreadyConfirmed = searchParams.get('confirmed') === 'true'
@@ -51,7 +71,7 @@ export default function GameRoomPage() {
       socket.emit('room:list', (response: { success: boolean; rooms?: RoomInfo[] }) => {
         if (response.success && response.rooms) {
           const targetRoom = response.rooms.find(r => r.id === roomId)
-          const userBalance = balance ?? 0
+          const userBalance = balanceRef.current ?? 0
           if (targetRoom && targetRoom.isBetRoom && targetRoom.betAmount > 0 && userBalance > 0 && targetRoom.betAmount > userBalance * 0.25) {
             setPendingBetAmount(targetRoom.betAmount)
             return
@@ -61,6 +81,11 @@ export default function GameRoomPage() {
         socket.emit('room:join', { roomId })
       })
     }
+  }, [socket, isConnected, roomId, searchParams])
+
+  // Event listeners (separate effect so join doesn't re-fire)
+  useEffect(() => {
+    if (!socket || !isConnected) return
 
     // Listen for room state updates
     const handleRoomUpdate = (data: RoomData) => {
@@ -85,7 +110,7 @@ export default function GameRoomPage() {
 
     // Listen for kicked
     const handleKicked = () => {
-      router.push('/')
+      routerRef.current.push('/')
     }
 
     // Listen for game end
@@ -106,7 +131,7 @@ export default function GameRoomPage() {
     socket.on('game:ended', handleGameEnded)
     socket.on('game:aborted', handleGameAborted)
 
-    // Cleanup: leave room on unmount
+    // Cleanup: leave room on unmount, unregister handlers
     return () => {
       socket.emit('room:leave', { roomId })
       socket.off('room:update', handleRoomUpdate)
@@ -116,8 +141,9 @@ export default function GameRoomPage() {
       socket.off('room:kicked', handleKicked)
       socket.off('game:ended', handleGameEnded)
       socket.off('game:aborted', handleGameAborted)
+      joinedRef.current = false
     }
-  }, [socket, isConnected, roomId, router, searchParams, balance])
+  }, [socket, isConnected, roomId])
 
   // Confirmation handlers
   const handleBetConfirm = () => {
@@ -193,6 +219,8 @@ export default function GameRoomPage() {
 
     const sorted = [...scores].sort((a, b) => b.total - a.total)
     const winnerId = gameEnd?.winner || room.gameState?.winner
+    const payouts = gameEnd?.payouts
+    const isBetGame = room.isBetRoom && payouts && payouts.length > 0
 
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-4">
@@ -205,6 +233,7 @@ export default function GameRoomPage() {
             {sorted.map((player, index) => {
               const isWinner = player.userId === winnerId
               const isMe = player.userId === userId
+              const payout = payouts?.find(p => p.userId === player.userId)
               return (
                 <div
                   key={player.userId}
@@ -231,9 +260,16 @@ export default function GameRoomPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xl font-bold ${isWinner ? 'text-yellow-300' : 'text-gray-300'}`}>
-                      {player.total}
-                    </span>
+                    <div className="text-right">
+                      <span className={`text-xl font-bold ${isWinner ? 'text-yellow-300' : 'text-gray-300'}`}>
+                        {player.total} Pkt.
+                      </span>
+                      {isBetGame && payout && (
+                        <p className={`text-sm font-semibold ${payout.amount > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                          +{payout.amount} Chips
+                        </p>
+                      )}
+                    </div>
                     {!isMe && (
                       <TransferDialog
                         recipientId={player.userId}
@@ -280,17 +316,68 @@ export default function GameRoomPage() {
   }
 
   if (room.status === 'playing' && room.gameState) {
-    return (
-      <GameBoard
-        gameState={room.gameState}
-        roomId={roomId}
-        currentUserId={userId || ''}
-        hostId={room.hostId}
-        socket={socket}
-        isBetRoom={room.isBetRoom}
-        betAmount={room.betAmount}
-      />
-    )
+    // Route to correct game board based on gameType
+    switch (room.gameType) {
+      case 'kniffel':
+        return (
+          <GameBoard
+            gameState={room.gameState}
+            roomId={roomId}
+            currentUserId={userId || ''}
+            hostId={room.hostId}
+            socket={socket}
+            isBetRoom={room.isBetRoom}
+            betAmount={room.betAmount}
+          />
+        )
+      case 'blackjack':
+        return (
+          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-white mb-4">🃏 Blackjack</h1>
+              <p className="text-xl text-gray-400">Kommt bald</p>
+              <Button
+                onClick={() => router.push('/')}
+                className="mt-6 bg-green-600 hover:bg-green-700"
+              >
+                Zurück zur Lobby
+              </Button>
+            </div>
+          </div>
+        )
+      case 'roulette':
+        return (
+          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-white mb-4">🎰 Roulette</h1>
+              <p className="text-xl text-gray-400">Kommt bald</p>
+              <Button
+                onClick={() => router.push('/')}
+                className="mt-6 bg-green-600 hover:bg-green-700"
+              >
+                Zurück zur Lobby
+              </Button>
+            </div>
+          </div>
+        )
+      case 'poker':
+        return (
+          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-white mb-4">♠ Poker</h1>
+              <p className="text-xl text-gray-400">Kommt bald</p>
+              <Button
+                onClick={() => router.push('/')}
+                className="mt-6 bg-green-600 hover:bg-green-700"
+              >
+                Zurück zur Lobby
+              </Button>
+            </div>
+          </div>
+        )
+      default:
+        return null
+    }
   }
 
   return null
