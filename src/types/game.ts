@@ -1,3 +1,6 @@
+// Game types
+export type GameType = 'kniffel' | 'blackjack' | 'roulette' | 'poker'
+
 // Dice types
 export type DiceValue = 1 | 2 | 3 | 4 | 5 | 6
 export type DiceValues = [DiceValue, DiceValue, DiceValue, DiceValue, DiceValue]
@@ -54,10 +57,30 @@ export interface GameState {
   winner: string | null // userId
 }
 
+// Game-specific settings
+export interface PokerSettings {
+  startingBlinds: number
+  blindEscalation: boolean
+  blindInterval: number // minutes
+  allowRebuys: boolean
+  rebuyLimit: number
+  minBuyIn: number
+  maxBuyIn: number
+}
+
+export interface BlackjackSettings {
+  maxHands: number // 1-3 for solo multi-hand
+}
+
+export interface RouletteSettings {
+  spinTimerSec: number // 0 = manual trigger
+}
+
 // Room settings (sent when creating a room)
 export interface RoomSettings {
   name: string
-  maxPlayers: number // 2-6
+  gameType: GameType
+  maxPlayers: number // 2-6 for Kniffel, 1-7 for Blackjack, 1-10 for Roulette, 2-9 for Poker
   isPrivate: boolean
   turnTimer: number // 30, 60, or 90
   afkThreshold: number // consecutive inactive rounds
@@ -66,6 +89,9 @@ export interface RoomSettings {
   minBet?: number // room min bet (optional override)
   maxBet?: number // room max bet (optional override)
   payoutRatios?: { position: number; percentage: number }[] // custom payout ratios
+  pokerSettings?: PokerSettings
+  blackjackSettings?: BlackjackSettings
+  rouletteSettings?: RouletteSettings
 }
 
 // Room info for lobby display
@@ -74,7 +100,7 @@ export interface RoomInfo {
   name: string
   hostId: string
   hostName: string
-  gameType: string
+  gameType: GameType
   status: 'waiting' | 'playing' | 'ended'
   isPrivate: boolean
   maxPlayers: number

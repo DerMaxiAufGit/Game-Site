@@ -1,10 +1,10 @@
 'use client'
 
-import { RoomInfo } from '@/types/game'
+import { RoomInfo, GameType } from '@/types/game'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Users, Crown, Clock, Coins } from 'lucide-react'
+import { Users, Crown, Clock, Coins, Dices, CircleDot, Spade } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface RoomCardProps {
@@ -28,7 +28,22 @@ export function RoomCard({ room, onJoin, currentUserId }: RoomCardProps) {
     }
   }
 
+  // Get game type display info
+  const getGameTypeInfo = (gameType: GameType) => {
+    switch (gameType) {
+      case 'kniffel':
+        return { icon: Dices, label: 'Kniffel', color: 'bg-green-500/10 text-green-500 border-green-500/20' }
+      case 'blackjack':
+        return { icon: null, label: 'Blackjack', emoji: '🃏', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' }
+      case 'roulette':
+        return { icon: CircleDot, label: 'Roulette', color: 'bg-red-500/10 text-red-500 border-red-500/20' }
+      case 'poker':
+        return { icon: Spade, label: 'Poker', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' }
+    }
+  }
+
   const statusBadge = getStatusBadge()
+  const gameTypeInfo = getGameTypeInfo(room.gameType)
   const isRoomFull = room.currentPlayers >= room.maxPlayers
   const canJoin = room.status === 'waiting' && !isRoomFull
   const canSpectate = room.status === 'playing'
@@ -60,8 +75,10 @@ export function RoomCard({ room, onJoin, currentUserId }: RoomCardProps) {
             </CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
-            <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">
-              {t('game.kniffel')}
+            <Badge variant="outline" className={gameTypeInfo.color}>
+              {gameTypeInfo.icon && <gameTypeInfo.icon className="h-3 w-3 mr-1" />}
+              {gameTypeInfo.emoji && <span className="mr-1">{gameTypeInfo.emoji}</span>}
+              {gameTypeInfo.label}
             </Badge>
             <Badge className={statusBadge.color} variant="outline">
               {statusBadge.text}

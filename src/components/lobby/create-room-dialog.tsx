@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Coins } from 'lucide-react'
+import { Coins, Dices, CircleDot, Spade } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
-import { RoomSettings } from '@/types/game'
+import { RoomSettings, GameType } from '@/types/game'
 
 interface CreateRoomDialogProps {
   open: boolean
@@ -24,6 +24,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
   const router = useRouter()
   const { socket } = useSocket()
 
+  const [gameType, setGameType] = useState<GameType>('kniffel')
   const [roomName, setRoomName] = useState('')
   const [maxPlayers, setMaxPlayers] = useState('4')
   const [turnTimer, setTurnTimer] = useState('60')
@@ -40,6 +41,10 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
     { position: 3, percentage: 10 }
   ])
   const [isCreating, setIsCreating] = useState(false)
+
+  // Game-specific settings
+  const [spinTimer, setSpinTimer] = useState('30')
+  const [startingBlinds, setStartingBlinds] = useState('10')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,6 +93,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
 
     const settings: RoomSettings = {
       name: roomName.trim(),
+      gameType,
       maxPlayers: parseInt(maxPlayers, 10),
       isPrivate,
       turnTimer: parseInt(turnTimer, 10),
@@ -96,7 +102,22 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
       betAmount: isBetRoom ? betAmount : undefined,
       minBet: isBetRoom && minBet ? minBet : undefined,
       maxBet: isBetRoom && maxBet ? maxBet : undefined,
-      payoutRatios: isBetRoom && useCustomPayout ? payoutRatios : undefined
+      payoutRatios: isBetRoom && useCustomPayout ? payoutRatios : undefined,
+      rouletteSettings: gameType === 'roulette' ? {
+        spinTimerSec: parseInt(spinTimer, 10)
+      } : undefined,
+      pokerSettings: gameType === 'poker' ? {
+        startingBlinds: parseInt(startingBlinds, 10),
+        blindEscalation: false,
+        blindInterval: 10,
+        allowRebuys: true,
+        rebuyLimit: 3,
+        minBuyIn: parseInt(startingBlinds, 10) * 20,
+        maxBuyIn: parseInt(startingBlinds, 10) * 100
+      } : undefined,
+      blackjackSettings: gameType === 'blackjack' ? {
+        maxHands: 1
+      } : undefined
     }
 
     socket.emit('room:create', settings, (response: { success: boolean; roomId?: string; error?: string }) => {
@@ -106,6 +127,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
         toast.success('Raum erfolgreich erstellt')
         onOpenChange(false)
         // Reset form
+        setGameType('kniffel')
         setRoomName('')
         setMaxPlayers('4')
         setTurnTimer('60')
@@ -121,12 +143,28 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
           { position: 2, percentage: 30 },
           { position: 3, percentage: 10 }
         ])
+        setSpinTimer('30')
+        setStartingBlinds('10')
         // Navigate to game room
         router.push(`/game/${response.roomId}`)
       } else {
         toast.error(response.error || 'Fehler beim Erstellen des Raums')
       }
     })
+  }
+
+  // Helper to get max player options based on game type
+  const getMaxPlayerOptions = () => {
+    switch (gameType) {
+      case 'kniffel':
+        return [2, 3, 4, 5, 6]
+      case 'blackjack':
+        return [1, 2, 3, 4, 5, 6, 7]
+      case 'roulette':
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      case 'poker':
+        return [2, 3, 4, 5, 6, 7, 8, 9]
+    }
   }
 
   return (
@@ -141,6 +179,24 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Game Type Selector - FIRST FIELD */}
+            <div className="space-y-2">
+              <Label htmlFor="gameType" className="text-white">
+                Spielart
+              </Label>
+              <Select value={gameType} onValueChange={(val) => setGameType(val as GameType)}>
+                <SelectTrigger id="gameType" className="bg-zinc-800 border-zinc-700 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kniffel">🎲 Kniffel</SelectItem>
+                  <SelectItem value="blackjack">🃏 Blackjack</SelectItem>
+                  <SelectItem value="roulette">🎰 Roulette</SelectItem>
+                  <SelectItem value="poker">♠ Poker</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Room Name */}
             <div className="space-y-2">
               <Label htmlFor="roomName" className="text-white">
@@ -168,50 +224,96 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2">2 Spieler</SelectItem>
-                  <SelectItem value="3">3 Spieler</SelectItem>
-                  <SelectItem value="4">4 Spieler</SelectItem>
-                  <SelectItem value="5">5 Spieler</SelectItem>
-                  <SelectItem value="6">6 Spieler</SelectItem>
+                  {getMaxPlayerOptions().map(num => (
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} Spieler
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Turn Timer */}
-            <div className="space-y-2">
-              <Label htmlFor="turnTimer" className="text-white">
-                {t('room.turnTimer')}
-              </Label>
-              <Select value={turnTimer} onValueChange={setTurnTimer}>
-                <SelectTrigger id="turnTimer" className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 Sekunden</SelectItem>
-                  <SelectItem value="60">60 Sekunden</SelectItem>
-                  <SelectItem value="90">90 Sekunden</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Game-specific settings */}
+            {gameType === 'kniffel' && (
+              <>
+                {/* Turn Timer */}
+                <div className="space-y-2">
+                  <Label htmlFor="turnTimer" className="text-white">
+                    {t('room.turnTimer')}
+                  </Label>
+                  <Select value={turnTimer} onValueChange={setTurnTimer}>
+                    <SelectTrigger id="turnTimer" className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">30 Sekunden</SelectItem>
+                      <SelectItem value="60">60 Sekunden</SelectItem>
+                      <SelectItem value="90">90 Sekunden</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* AFK Threshold */}
-            <div className="space-y-2">
-              <Label htmlFor="afkThreshold" className="text-white">
-                {t('room.afkThreshold')}
-              </Label>
-              <Input
-                id="afkThreshold"
-                type="number"
-                value={afkThreshold}
-                onChange={(e) => setAfkThreshold(e.target.value)}
-                min={1}
-                max={10}
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-              <p className="text-xs text-gray-400">
-                Spieler werden nach dieser Anzahl inaktiver Runden gekickt
-              </p>
-            </div>
+                {/* AFK Threshold */}
+                <div className="space-y-2">
+                  <Label htmlFor="afkThreshold" className="text-white">
+                    {t('room.afkThreshold')}
+                  </Label>
+                  <Input
+                    id="afkThreshold"
+                    type="number"
+                    value={afkThreshold}
+                    onChange={(e) => setAfkThreshold(e.target.value)}
+                    min={1}
+                    max={10}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Spieler werden nach dieser Anzahl inaktiver Runden gekickt
+                  </p>
+                </div>
+              </>
+            )}
+
+            {gameType === 'roulette' && (
+              <div className="space-y-2">
+                <Label htmlFor="spinTimer" className="text-white">
+                  Spin-Timer
+                </Label>
+                <Select value={spinTimer} onValueChange={setSpinTimer}>
+                  <SelectTrigger id="spinTimer" className="bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 Sekunden</SelectItem>
+                    <SelectItem value="30">30 Sekunden</SelectItem>
+                    <SelectItem value="60">60 Sekunden</SelectItem>
+                    <SelectItem value="0">Manuell</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {gameType === 'poker' && (
+              <div className="space-y-2">
+                <Label htmlFor="startingBlinds" className="text-white">
+                  Startblinds
+                </Label>
+                <Select value={startingBlinds} onValueChange={setStartingBlinds}>
+                  <SelectTrigger id="startingBlinds" className="bg-zinc-800 border-zinc-700 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 / 10</SelectItem>
+                    <SelectItem value="10">10 / 20</SelectItem>
+                    <SelectItem value="25">25 / 50</SelectItem>
+                    <SelectItem value="50">50 / 100</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-400">
+                  Small Blind / Big Blind
+                </p>
+              </div>
+            )}
 
             {/* Public/Private Toggle */}
             <div className="flex items-center justify-between">
