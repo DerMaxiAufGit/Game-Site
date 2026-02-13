@@ -16,6 +16,9 @@ import { registerBlackjackHandlers } from './src/lib/game/blackjack/handlers.js'
 import { createBlackjackState } from './src/lib/game/blackjack/state-machine.js'
 import { registerRouletteHandlers } from './src/lib/game/roulette/handlers.js'
 import { createInitialState as createRouletteState } from './src/lib/game/roulette/state-machine.js'
+import { registerPokerHandlers } from './src/lib/game/poker/handlers.js'
+import { createPokerState, applyPokerAction } from './src/lib/game/poker/state-machine.js'
+import { createDeck, shuffleDeck } from './src/lib/game/cards/deck.js'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -284,6 +287,38 @@ function emitBalanceUpdate(io, userId, newBalance, change, description) {
     change,
     description
   })
+}
+
+// Helper function to emit personalized poker state (module scope)
+function emitPokerState(io, roomId, room) {
+  const gameState = room.gameState
+  if (!gameState || room.gameType !== 'poker') return
+
+  const sockets = io.sockets.adapter.rooms.get(roomId)
+  if (!sockets) return
+
+  const isShowdown = gameState.phase === 'showdown'
+
+  for (const socketId of sockets) {
+    const socket = io.sockets.sockets.get(socketId)
+    if (!socket) continue
+
+    const userId = socket.data.userId
+
+    // Create personalized state with filtered hole cards
+    const personalizedState = {
+      ...gameState,
+      players: gameState.players.map((player) => ({
+        ...player,
+        holeCards:
+          isShowdown || player.userId === userId
+            ? player.holeCards // Show own cards or all cards in showdown
+            : [] // Hide other players' cards
+      }))
+    }
+
+    socket.emit('game:state-update', { state: personalizedState, roomId })
+  }
 }
 
 // Turn timer management
@@ -623,6 +658,7 @@ app.prepare().then(() => {
     // Register game-specific handlers
     registerBlackjackHandlers(socket, io, roomManager, prisma)
     registerRouletteHandlers(socket, io, roomManager, prisma)
+    registerPokerHandlers(socket, io, roomManager, prisma)
 
     // Handle wallet balance request
     socket.on('wallet:get-balance', async (callback) => {
@@ -1407,11 +1443,25 @@ app.prepare().then(() => {
         }
         room.gameState = createRouletteState(playerData, settings)
       } else if (room.gameType === 'poker') {
-        // Placeholder state for Poker (will be replaced by Plan 04-05)
-        room.gameState = {
-          phase: 'waiting',
-          gameType: 'poker',
-          players: playerData
+        // Create shuffled deck with CSPRNG
+        const deck = shuffleDeck(createDeck())
+
+        // Convert buy-in to chips
+        const settings = {
+          smallBlind: room.pokerSettings?.smallBlind || 10,
+          bigBlind: room.pokerSettings?.bigBlind || 20,
+          startingChips: room.pokerSettings?.startingChips || 1000,
+          blindEscalation: room.pokerSettings?.blindEscalation ?? false,
+          blindInterval: room.pokerSettings?.blindInterval || 10,
+          turnTimer: room.turnTimer || 30
+        }
+
+        room.gameState = createPokerState(playerData, settings, deck)
+
+        // Auto-post blinds and start first hand
+        const blindsResult = applyPokerAction(room.gameState, { type: 'POST_BLINDS' }, playerData[0].userId)
+        if (!(blindsResult instanceof Error)) {
+          room.gameState = blindsResult
         }
       }
 
@@ -1437,7 +1487,14 @@ app.prepare().then(() => {
 
       sendSystemMessage(roomId, io, 'Das Spiel beginnt!')
       io.to(roomId).emit('room:update', room)
-      io.to(roomId).emit('game:state-update', { state: room.gameState, roomId })
+
+      // Emit personalized state for poker, regular state for other games
+      if (room.gameType === 'poker') {
+        emitPokerState(io, roomId, room)
+      } else {
+        io.to(roomId).emit('game:state-update', { state: room.gameState, roomId })
+      }
+
       io.emit('room:list-update', roomManager.getPublicRooms())
 
       // Start turn timer (only for Kniffel for now)
@@ -1595,6 +1652,16 @@ app.prepare().then(() => {
             } catch (error) {
               console.error('Disconnect escrow error:', error)
             }
+          }
+        }
+
+        // Handle poker-specific disconnect
+        if (room.gameType === 'poker' && room.gameState && room.status === 'playing') {
+          const disconnectAction = { type: 'PLAYER_DISCONNECT', userId: socket.data.userId }
+          const result = applyPokerAction(room.gameState, disconnectAction, socket.data.userId)
+          if (!(result instanceof Error)) {
+            room.gameState = result
+            emitPokerState(io, room.id, room)
           }
         }
 
