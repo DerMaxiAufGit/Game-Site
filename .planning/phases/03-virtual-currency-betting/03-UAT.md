@@ -1,18 +1,14 @@
 ---
-status: re-testing
+status: complete
 phase: 03-virtual-currency-betting
 source: 03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md, 03-05-SUMMARY.md, 03-06-SUMMARY.md, 03-07-SUMMARY.md, 03-08-SUMMARY.md, 03-09-SUMMARY.md
 started: 2026-02-12T18:00:00Z
-updated: 2026-02-12T19:00:00Z
+updated: 2026-02-13T12:00:00Z
 ---
 
 ## Current Test
 
-number: 5
-name: Transfer Chips to Another User
-expected: |
-  On the wallet page, the transfer form lets you search for a user by name. Typing shows matching users in a dropdown. Selecting a recipient and entering an amount, then submitting, deducts from your balance and credits the recipient. Transfer limits (max per transfer, daily total) are displayed.
-awaiting: user response
+[testing complete]
 
 ## Tests
 
@@ -35,12 +31,12 @@ result: pass
 ### 5. Transfer Chips to Another User
 expected: On the wallet page, the transfer form lets you search for a user by name. Typing shows matching users in a dropdown. Selecting a recipient and entering an amount, then submitting, deducts from your balance and credits the recipient. Transfer limits (max per transfer, daily total) are displayed.
 previous: issue (blocker) — fixed by 03-11
-result: [pending]
+result: pass
 
 ### 6. Create a Bet Room
 expected: In the room creation dialog, toggling from "Kostenlos" to "Einsatz" reveals bet settings: preset amount buttons (50, 100, 250, 500), a custom amount input, optional min/max bet fields, and payout ratio configuration. Submitting creates a room with those bet settings.
 previous: issue (blocker) — fixed by 03-11
-result: [pending]
+result: pass
 
 ### 7. Lobby Bet/Free Filters
 expected: The lobby shows filter tabs "Alle", "Kostenlos", and "Einsatz" with room counts in parentheses. Bet rooms display an amber chip badge showing the bet amount (e.g., "100 Chips"). Free rooms show a green "Kostenlos" badge. Clicking filter tabs filters the room list accordingly.
@@ -48,136 +44,125 @@ result: pass
 
 ### 8. Join Bet Room (Buy-in)
 expected: Joining a bet room deducts the bet amount from your balance. If your balance is insufficient, you join as spectator instead of player. Your sidebar balance updates immediately after joining.
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: issue
+reported: "only takes money from people who join the room. not the creator of the room. also in the transaction history the bet shows twice for user who joins. Einsatz: Table and Einsatz verfallen: Table (total balance is calculated correctly tho)"
+severity: major
 
 ### 9. Leave Bet Room Before Start (Refund)
 expected: Leaving a bet room before the game has started refunds the full bet amount to your balance. Your sidebar balance updates to reflect the refund.
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: pass
 
 ### 10. Pot Display During Gameplay
 expected: During a bet room game, an animated pot display shows the total pot amount (bet amount x number of players) on the game board with a chip icon and amber/gold styling. Free rooms do not show a pot display.
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: issue
+reported: "no, there is no pot showing (i am testing in kniffel)."
+severity: major
 
 ### 11. Game End Payout Breakdown
 expected: After a bet room game ends, the results screen shows a payout breakdown below the podium: each winner's position (with medal icons), their payout amount, and the distribution follows the configured payout ratios (default 60%/30%/10%).
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: skipped
+reason: blocked by Test 10 (pot not showing)
 
 ### 12. AFK Warning in Bet Rooms
 expected: In a bet room, if a player goes inactive, a warning banner appears with a countdown timer and an "Ich bin da!" button. Clicking the button cancels the warning. If the timer expires, the player is kicked and forfeits their bet. In free rooms, AFK kicks happen immediately without warning.
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: issue
+reported: "when the timer of a turn runs out, nothing even happens."
+severity: major
 
 ### 13. Player Card Chip Transfer
 expected: In a game room's player list, each other player shows a "Chips senden" button (visible during waiting and ended phases). Clicking it opens the TransferDialog pre-filled with that player as recipient.
-previous: skipped (blocked by Test 6)
-result: [pending]
+result: issue
+reported: "no button for sending there also i can't open a user profile or something when clicking the user."
+severity: major
 
 ### 14. Admin Finance Dashboard
 expected: Admin users see a "Finanzen" link with a coin icon in the sidebar. The /admin/finance page shows tabs: Dashboard, Transaktionen, Guthaben, Alarme, Einstellungen. The Dashboard tab shows economy stats (total circulation, average balance, active wallets, daily volume), a 30-day volume chart, transaction type distribution, and top earners/spenders leaderboards.
 previous: issue (major) — fixed by 03-12
-result: [pending]
+result: pass
 
 ### 15. Admin Transaction Log
 expected: The "Transaktionen" tab shows a filterable table of all transactions. A type dropdown filters by transaction type (11 types). A user search field filters by user. Transactions show date, type, user, colored amount, and description. "Mehr laden" button loads more entries.
-previous: skipped (blocked by Test 14)
-result: [pending]
+result: pass
 
 ### 16. Admin Balance Adjustment
 expected: The "Guthaben" tab lets admin search for a user, see their current balance and frozen status, and adjust their balance (positive or negative) with an optional reason. After adjustment, the affected user's sidebar balance updates in real-time via socket event.
-previous: skipped (blocked by Test 14)
-result: [pending]
+result: pass
 
 ### 17. Admin Wallet Freeze/Unfreeze
 expected: On the Guthaben tab, after selecting a user, admin can freeze or unfreeze their wallet. A frozen wallet shows a timestamp and tooltip explaining restrictions (can play but cannot bet or transfer). Frozen users cannot make outbound transfers or place bets.
-previous: skipped (blocked by Test 14)
-result: [pending]
+result: pass
 
 ### 18. Suspicious Activity Alerts
 expected: The "Alarme" tab shows detected suspicious activity: large transfers over threshold, daily limit violations, and rapid balance drops. Alerts are color-coded (amber warning, red critical). When no issues exist, a green "Keine verdächtigen Aktivitäten" card is shown. The tab badge shows alert count when alerts exist.
-previous: skipped (blocked by Test 14)
-result: [pending]
+result: pass
 
 ### 19. Admin System Settings
 expected: The "Einstellungen" tab shows a form with all economic parameters: currency name, starting balance, daily allowance, weekly bonus, transfer limits, default bet presets, payout ratios (editable table), AFK grace period, and alert thresholds. Saving updates take effect immediately without redeployment.
 previous: issue (major) — fixed by 03-12
-result: [pending]
+result: issue
+reported: "Ungültiges JSON-Format für Presets oder Auszahlungsquoten. when saving the settings."
+severity: major
 
 ### 20. Custom Starting Balance on Invite
 expected: In the admin invite dialog, an optional "Individuelles Startguthaben" field allows setting a custom starting balance for that invite. The placeholder shows the current default (e.g., "Standard: 1000"). When a user registers via that invite, they receive the custom amount instead of the default.
-previous: skipped (admin finance page inaccessible)
-result: [pending]
+result: pass
 
 ## Summary
 
 total: 20
-passed: 5
-issues: 0
-pending: 15
-skipped: 0
+passed: 14
+issues: 5
+pending: 0
+skipped: 1
 
 ## Gaps
 
-- truth: "Transfer deducts from sender and credits recipient atomically"
+- truth: "Room creator should also be charged buy-in, and joining players should not see duplicate transaction entries"
   status: failed
-  reason: "User reported: error when sending, but it still removes my chips. Invalid tx.wallet.update() — No record was found for an update."
-  severity: blocker
-  test: 5
-  root_cause: "creditBalance() in transactions.ts line 144 calls tx.wallet.update() without checking if wallet exists. When recipient has never accessed their wallet (lazy init not triggered), the update fails. Sender already debited in separate call."
-  artifacts:
-    - path: "src/lib/wallet/transactions.ts"
-      issue: "creditBalance() assumes wallet exists, no upsert or lazy init"
-    - path: "src/lib/actions/wallet.ts"
-      issue: "transferFunds() calls creditBalance() for recipient without ensuring wallet exists"
-  missing:
-    - "creditBalance() needs to handle missing wallet — either upsert or trigger lazy init before update"
-  debug_session: ".planning/debug/p2p-transfer-wallet-update-error.md"
-
-- truth: "Room creation works for both free and bet rooms"
-  status: failed
-  reason: "User reported: infinite loading screen when creating a room with bets. same without bets."
-  severity: blocker
-  test: 6
-  root_cause: "RoomManager.createRoom() was made async (line 40) to fetch SystemSettings payout ratios. The room:create handler (line 674) uses await correctly. Likely cause: Prisma Client not regenerated after SystemSettings model was added, making prisma.systemSettings undefined and throwing TypeError. For free rooms, another issue may exist — needs deeper investigation during fix."
-  artifacts:
-    - path: "server.js"
-      issue: "room:create handler at line 674-714, createRoom() at line 40-89, SystemSettings query at line 47"
-  missing:
-    - "Run npx prisma generate to regenerate Prisma Client"
-    - "Add defensive check for prisma.systemSettings existence"
-    - "Investigate why free rooms also hang (should skip Prisma query)"
-  debug_session: ".planning/debug/room-creation-infinite-loading.md"
-
-- truth: "Admin finance page loads without errors"
-  status: failed
-  reason: "User reported: hydration mismatch error when accessing /admin/finance — A tree hydrated but some attributes of the server rendered HTML didn't match the client properties."
+  reason: "User reported: only takes money from people who join the room. not the creator of the room. also in the transaction history the bet shows twice for user who joins. Einsatz: Table and Einsatz verfallen: Table (total balance is calculated correctly tho)"
   severity: major
-  test: 14
-  root_cause: "Date objects from Prisma passed directly to client components without serialization. getAdminTransactionLog() returns items with createdAt: Date fields. TransactionLog formats with Intl.DateTimeFormat('de-DE') which produces different output on server vs client due to timezone/locale differences."
-  artifacts:
-    - path: "src/lib/actions/admin-finance.ts"
-      issue: "getAdminTransactionLog() returns Date objects without serialization (line 183-186)"
-    - path: "src/components/admin/transaction-log.tsx"
-      issue: "Interface defines createdAt: Date, formatted with Intl.DateTimeFormat (line 36, 77, 247)"
-    - path: "src/app/(app)/admin/finance/page.tsx"
-      issue: "Server component passes unserialized transaction log to client (lines 26, 69)"
-  missing:
-    - "Serialize dates to ISO strings in server action before passing to client components"
-    - "Update TransactionLog interface to accept string instead of Date for createdAt"
-  debug_session: ".planning/debug/admin-finance-hydration-missing-tab.md"
+  test: 8
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
 
-- truth: "Einstellungen tab exists on admin finance page"
+- truth: "Pot display shows during bet room gameplay"
   status: failed
-  reason: "User reported: there is no Einstellungen tab"
+  reason: "User reported: no, there is no pot showing (i am testing in kniffel)."
+  severity: major
+  test: 10
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "Turn timer expiry triggers auto-play or AFK warning"
+  status: failed
+  reason: "User reported: when the timer of a turn runs out, nothing even happens."
+  severity: major
+  test: 12
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "Player cards in game room show Chips senden button for transfers"
+  status: failed
+  reason: "User reported: no button for sending there also i can't open a user profile or something when clicking the user."
+  severity: major
+  test: 13
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
+
+- truth: "Admin system settings save successfully"
+  status: failed
+  reason: "User reported: Ungültiges JSON-Format für Presets oder Auszahlungsquoten. when saving the settings."
   severity: major
   test: 19
-  root_cause: "Tab exists in code (page.tsx line 61 and lines 80-82). Likely consequence of hydration error from Bug 14 — page crashes during hydration before all tabs render. Fixing the hydration error should resolve this."
-  artifacts:
-    - path: "src/app/(app)/admin/finance/page.tsx"
-      issue: "Tab defined at line 61 and content at lines 80-82, but hydration crash prevents rendering"
-  missing:
-    - "Fix hydration error (Gap 3) — tab should appear once page renders correctly"
-  debug_session: ".planning/debug/admin-finance-hydration-missing-tab.md"
+  root_cause: ""
+  artifacts: []
+  missing: []
+  debug_session: ""
