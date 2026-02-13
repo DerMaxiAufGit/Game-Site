@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 3 of 5 (Virtual Currency Betting)
-Plan: 11 of 12 in current phase (gap closure complete, 03-10 UAT remains)
+Plan: 14 of 14 in current phase (gap closure complete, 03-10 UAT remains)
 Status: In progress
-Last activity: 2026-02-12 — Completed 03-11 and 03-12 gap closure plans
+Last activity: 2026-02-13 — Completed 03-14-PLAN.md (UI bug fixes for pot display and transfers)
 
-Progress: [█████████████████████] 46% (23/50 total plans complete, 11/12 Phase 3 plans complete)
+Progress: [█████████████████████] 52% (26/50 total plans complete, 14/14 Phase 3 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
-- Average duration: 5.8 min
-- Total execution time: 2.5 hours
+- Total plans completed: 25
+- Average duration: 5.6 min
+- Total execution time: 2.7 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [█████████████████████] 46% 
 |-------|-------|-------|----------|
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
-| 3 (Virtual Currency) | 11/12 | 37.6 min | 3.4 min |
+| 3 (Virtual Currency) | 13/14 | 45.2 min | 3.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 4.2min, 3.7min, 4.9min, 6.5min, 3.4min
-- Trend: Phase 3 maintaining solid velocity with bug fixes completing quickly
+- Last 5 plans: 4.9min, 6.5min, 3.4min, 3.5min, 4.05min
+- Trend: Phase 3 maintaining solid velocity, gap closure plans averaging ~3.6 min
 
 *Updated after each plan completion*
 
@@ -47,6 +47,9 @@ Progress: [█████████████████████] 46% 
 | Phase 03 P09 | 391s (6.5min) | 2 tasks | 9 files |
 | Phase 03 P11 | 131s (2.2min) | 2 tasks | 3 files |
 | Phase 03 P12 | 206s (3.4min) | 2 tasks | 4 files |
+| Phase 03 P13 | 243s (4.05min) | 3 tasks | 1 file |
+| Phase 03 P13 | 209s (3.5min) | 2 tasks | 3 files |
+| Phase 03 P14 | 209s (3.5min) | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -149,6 +152,11 @@ Recent decisions affecting current work:
 - [Phase 03]: Lazy wallet init in transaction context for P2P transfers
 - [Phase 03]: Single atomic transaction for transfers (not nested)
 - [Phase 03]: 5-second timeout on room creation via Promise.race
+- Module scope for timer helper functions (03-13): sendSystemMessage and emitBalanceUpdate moved to module scope for autoPlay/kickPlayerAFK access
+- Idempotency pattern for escrow (03-13): Check existingEscrow before debit/create to prevent duplicate charges on rejoin
+- Disconnect escrow cleanup (03-13): Mirror room:leave logic - refund PENDING, forfeit LOCKED based on game status
+- Use trigger prop for TransferDialog (03-14): TransferDialog accepts trigger prop (not children), consistent with component API
+- Remove duplicate form field name (03-14): Only hidden input has name attribute with JSON value for proper FormData parsing
 
 ### Pending Todos
 
