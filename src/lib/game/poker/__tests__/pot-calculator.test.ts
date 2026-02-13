@@ -297,15 +297,15 @@ describe('distributePots', () => {
     ];
 
     const handRankings = new Map<string, number>([
-      ['p1', 800], // wins main pot
-      ['p2', 500],
-      ['p3', 1000] // wins side pot
+      ['p1', 1000], // best hand, wins main pot
+      ['p2', 500],  // worst hand
+      ['p3', 800]   // middle hand, wins side pot (p1 not eligible)
     ]);
 
     const winnings = distributePots(pots, handRankings);
 
-    expect(winnings.get('p1')).toBe(90); // main pot
-    expect(winnings.get('p3')).toBe(140); // side pot
+    expect(winnings.get('p1')).toBe(90); // wins main pot (best overall)
+    expect(winnings.get('p3')).toBe(140); // wins side pot (best among p2, p3)
     expect(winnings.get('p2')).toBeUndefined();
   });
 
