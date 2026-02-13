@@ -7,6 +7,7 @@ import { WaitingRoom } from '@/components/game/WaitingRoom'
 import { GameBoard } from '@/components/game/GameBoard'
 import { BlackjackTable } from '@/components/blackjack/BlackjackTable'
 import { RouletteTable } from '@/components/roulette/RouletteTable'
+import { PokerTable } from '@/components/poker/PokerTable'
 import type { GameState, RoomInfo } from '@/types/game'
 import { useTranslations } from 'next-intl'
 import { Trophy, ArrowLeft, Send } from 'lucide-react'
@@ -46,6 +47,8 @@ export default function GameRoomPage() {
   const [error, setError] = useState<string | null>(null)
   const [gameEnd, setGameEnd] = useState<GameEndData | null>(null)
   const [pendingBetAmount, setPendingBetAmount] = useState<number | null>(null)
+  const [rebuyAvailable, setRebuyAvailable] = useState(false)
+  const [rebuyAmount, setRebuyAmount] = useState(0)
 
   // Use refs for values needed inside the effect but that should NOT trigger re-runs
   const balanceRef = useRef(balance)
@@ -125,6 +128,17 @@ export default function GameRoomPage() {
       setGameEnd(null)
     }
 
+    // Poker-specific: rebuy available
+    const handleRebuyAvailable = (data: { amount: number }) => {
+      setRebuyAvailable(true)
+      setRebuyAmount(data.amount)
+    }
+
+    // Poker-specific: hand end (clear rebuy)
+    const handlePokerHandEnd = () => {
+      setRebuyAvailable(false)
+    }
+
     socket.on('room:update', handleRoomUpdate)
     socket.on('room:player-joined', handlePlayerJoined)
     socket.on('room:player-left', handlePlayerLeft)
@@ -132,6 +146,8 @@ export default function GameRoomPage() {
     socket.on('room:kicked', handleKicked)
     socket.on('game:ended', handleGameEnded)
     socket.on('game:aborted', handleGameAborted)
+    socket.on('poker:rebuy-available', handleRebuyAvailable)
+    socket.on('poker:hand-end', handlePokerHandEnd)
 
     // Cleanup: leave room on unmount, unregister handlers
     return () => {
@@ -143,6 +159,8 @@ export default function GameRoomPage() {
       socket.off('room:kicked', handleKicked)
       socket.off('game:ended', handleGameEnded)
       socket.off('game:aborted', handleGameAborted)
+      socket.off('poker:rebuy-available', handleRebuyAvailable)
+      socket.off('poker:hand-end', handlePokerHandEnd)
       joinedRef.current = false
     }
   }, [socket, isConnected, roomId])
@@ -156,6 +174,21 @@ export default function GameRoomPage() {
   const handleBetCancel = () => {
     setPendingBetAmount(null)
     router.push('/')
+  }
+
+  // Poker rebuy handlers
+  const handleRebuy = () => {
+    if (socket) {
+      socket.emit('poker:rebuy', { roomId }, (response: any) => {
+        if (response?.success) {
+          setRebuyAvailable(false)
+        }
+      })
+    }
+  }
+
+  const handleDeclineRebuy = () => {
+    setRebuyAvailable(false)
   }
 
   // Loading state
@@ -356,18 +389,49 @@ export default function GameRoomPage() {
         )
       case 'poker':
         return (
-          <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-white mb-4">♠ Poker</h1>
-              <p className="text-xl text-gray-400">Kommt bald</p>
-              <Button
-                onClick={() => router.push('/')}
-                className="mt-6 bg-green-600 hover:bg-green-700"
-              >
-                Zurück zur Lobby
-              </Button>
-            </div>
-          </div>
+          <>
+            <PokerTable
+              gameState={room.gameState as any}
+              roomId={roomId}
+              currentUserId={userId || ''}
+              socket={socket}
+              isBetRoom={room.isBetRoom}
+            />
+
+            {/* Rebuy Dialog */}
+            {rebuyAvailable && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <Card className="w-full max-w-md border-gray-700 bg-gray-800/95">
+                  <CardHeader>
+                    <CardTitle className="text-2xl text-white">Chips aufstocken?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-gray-300">
+                      Deine Chips sind aufgebraucht. Möchtest du für ${rebuyAmount} wieder einsteigen?
+                    </p>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={handleRebuy}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        Aufstocken (${rebuyAmount})
+                      </Button>
+                      <Button
+                        onClick={handleDeclineRebuy}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        Ablehnen
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Wenn du ablehnst, wirst du als Zuschauer weiterspielen.
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </>
         )
       default:
         return null
