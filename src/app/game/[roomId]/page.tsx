@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useSocket } from '@/lib/socket/provider'
 import { WaitingRoom } from '@/components/game/WaitingRoom'
 import { GameBoard } from '@/components/game/GameBoard'
@@ -11,6 +11,7 @@ import { Trophy, ArrowLeft, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TransferDialog } from '@/components/wallet/transfer-dialog'
+import { BetConfirmation } from '@/components/betting/bet-confirmation'
 
 interface RoomData extends RoomInfo {
   players: { userId: string; displayName: string; isReady: boolean }[]
@@ -26,19 +27,40 @@ interface GameEndData {
 export default function GameRoomPage() {
   const params = useParams()
   const router = useRouter()
-  const { socket, isConnected, userId } = useSocket()
+  const { socket, isConnected, userId, balance } = useSocket()
   const t = useTranslations()
 
   const roomId = params.roomId as string
+  const searchParams = useSearchParams()
   const [room, setRoom] = useState<RoomData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [gameEnd, setGameEnd] = useState<GameEndData | null>(null)
+  const [pendingBetAmount, setPendingBetAmount] = useState<number | null>(null)
 
   useEffect(() => {
     if (!socket || !isConnected) return
 
-    // Join the room
-    socket.emit('room:join', { roomId })
+    // Check if user already confirmed in lobby
+    const alreadyConfirmed = searchParams.get('confirmed') === 'true'
+
+    if (alreadyConfirmed) {
+      // From lobby -- join directly, confirmation already happened
+      socket.emit('room:join', { roomId })
+    } else {
+      // Direct URL -- check if high-stakes confirmation needed
+      socket.emit('room:list', (response: { success: boolean; rooms?: RoomInfo[] }) => {
+        if (response.success && response.rooms) {
+          const targetRoom = response.rooms.find(r => r.id === roomId)
+          const userBalance = balance ?? 0
+          if (targetRoom && targetRoom.isBetRoom && targetRoom.betAmount > 0 && userBalance > 0 && targetRoom.betAmount > userBalance * 0.25) {
+            setPendingBetAmount(targetRoom.betAmount)
+            return
+          }
+        }
+        // Low-stakes, free room, or not found: join directly
+        socket.emit('room:join', { roomId })
+      })
+    }
 
     // Listen for room state updates
     const handleRoomUpdate = (data: RoomData) => {
@@ -95,7 +117,18 @@ export default function GameRoomPage() {
       socket.off('game:ended', handleGameEnded)
       socket.off('game:aborted', handleGameAborted)
     }
-  }, [socket, isConnected, roomId, router])
+  }, [socket, isConnected, roomId, router, searchParams, balance])
+
+  // Confirmation handlers
+  const handleBetConfirm = () => {
+    setPendingBetAmount(null)
+    if (socket) socket.emit('room:join', { roomId })
+  }
+
+  const handleBetCancel = () => {
+    setPendingBetAmount(null)
+    router.push('/')
+  }
 
   // Loading state
   if (!isConnected || !socket) {
@@ -131,6 +164,21 @@ export default function GameRoomPage() {
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-700 border-t-green-500" />
           <p className="text-sm text-gray-400">{t('common.loading')}</p>
         </div>
+      </div>
+    )
+  }
+
+  // High-stakes bet confirmation for direct URL navigation
+  if (pendingBetAmount !== null) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+        <BetConfirmation
+          open={true}
+          betAmount={pendingBetAmount}
+          currentBalance={balance ?? 0}
+          onConfirm={handleBetConfirm}
+          onCancel={handleBetCancel}
+        />
       </div>
     )
   }
