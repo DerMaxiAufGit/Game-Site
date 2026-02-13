@@ -7,6 +7,7 @@ import { RoomInfo } from '@/types/game'
 import { RoomCard } from '@/components/lobby/room-card'
 import { LobbyHeader } from '@/components/lobby/lobby-header'
 import { CreateRoomDialog } from '@/components/lobby/create-room-dialog'
+import { BetConfirmation } from '@/components/betting/bet-confirmation'
 import { Gamepad2, Coins } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { toast } from 'sonner'
@@ -15,12 +16,13 @@ import { Badge } from '@/components/ui/badge'
 export default function LobbyPage() {
   const t = useTranslations()
   const router = useRouter()
-  const { socket, isConnected, userId } = useSocket()
+  const { socket, isConnected, userId, balance } = useSocket()
 
   const [rooms, setRooms] = useState<RoomInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [activeFilter, setActiveFilter] = useState<'all' | 'free' | 'bet'>('all')
+  const [pendingJoinRoom, setPendingJoinRoom] = useState<RoomInfo | null>(null)
 
   // Fetch room list on mount and when rooms update
   useEffect(() => {
@@ -53,20 +55,47 @@ export default function LobbyPage() {
     }
   }, [socket, isConnected])
 
-  // Handle joining a room
+  // Actual join logic after confirmation (or for low-stakes/free rooms)
+  const doJoinRoom = (roomId: string) => {
+    if (!socket) return
+    socket.emit('room:join', { roomId }, (response: { success: boolean; error?: string }) => {
+      if (response.success) {
+        router.push(`/game/${roomId}?confirmed=true`)
+      } else {
+        toast.error(response.error || 'Fehler beim Beitreten')
+      }
+    })
+  }
+
+  // Handle joining a room - check threshold before joining
   const handleJoinRoom = (roomId: string) => {
     if (!socket) {
       toast.error('Keine Verbindung zum Server')
       return
     }
 
-    socket.emit('room:join', { roomId }, (response: { success: boolean; error?: string }) => {
-      if (response.success) {
-        router.push(`/game/${roomId}`)
-      } else {
-        toast.error(response.error || 'Fehler beim Beitreten')
-      }
-    })
+    const room = rooms.find(r => r.id === roomId)
+    if (!room) return
+
+    const userBalance = balance ?? 0
+    if (room.isBetRoom && room.betAmount > 0 && userBalance > 0 && room.betAmount > userBalance * 0.25) {
+      setPendingJoinRoom(room)
+      return
+    }
+
+    doJoinRoom(roomId)
+  }
+
+  // Confirmation handlers
+  const handleConfirmJoin = () => {
+    if (pendingJoinRoom) {
+      doJoinRoom(pendingJoinRoom.id)
+      setPendingJoinRoom(null)
+    }
+  }
+
+  const handleCancelJoin = () => {
+    setPendingJoinRoom(null)
   }
 
   // Filter rooms based on active filter
@@ -183,6 +212,15 @@ export default function LobbyPage() {
       <CreateRoomDialog
         open={createDialogOpen}
         onOpenChange={setCreateDialogOpen}
+      />
+
+      {/* Bet Confirmation Dialog */}
+      <BetConfirmation
+        open={!!pendingJoinRoom}
+        betAmount={pendingJoinRoom?.betAmount ?? 0}
+        currentBalance={balance ?? 0}
+        onConfirm={handleConfirmJoin}
+        onCancel={handleCancelJoin}
       />
     </div>
   )
