@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 4 of 5 (Additional Games)
-Plan: 7 of 11 in current phase
+Plan: 9 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-13 — Completed 04-07-PLAN.md (Blackjack Game Integration)
+Last activity: 2026-02-13 — Completed 04-09-PLAN.md (Poker Server Handlers)
 
-Progress: [█████████████████████░] 66% (33/50 total plans complete, 7/11 Phase 4 plans complete)
+Progress: [█████████████████████░] 70% (35/50 total plans complete, 9/11 Phase 4 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
+- Total plans completed: 35
 - Average duration: 5.1 min
-- Total execution time: 3.3 hours
+- Total execution time: 3.5 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [█████████████████████░] 6
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
 | 3 (Virtual Currency) | 15/15 | 51.3 min | 3.4 min |
-| 4 (Additional Games) | 7/11 | 55.4 min | 7.9 min |
+| 4 (Additional Games) | 9/11 | 64.0 min | 7.1 min |
 
 **Recent Trend:**
-- Last 5 plans: 7.0min, 3.4min, 10.1min, 9.5min, 6.0min
-- Trend: TDD plans (04-03, 04-05, 04-06) ~10min, integration plans (04-07) ~6min
+- Last 5 plans: 3.4min, 10.1min, 9.5min, 6.0min, 4.3min
+- Trend: TDD plans (04-03, 04-05, 04-06) ~10min, integration plans (04-07, 04-09) ~5min
 
 *Updated after each plan completion*
 
@@ -58,6 +58,8 @@ Progress: [█████████████████████░] 6
 | Phase 04 P05 | 606s (10.1min) | 3 tasks (TDD) | 2 files |
 | Phase 04 P06 | 568s (9.5min) | 2 tasks (TDD) | 2 files |
 | Phase 04 P07 | 365s (6.0min) | 2 tasks | 7 files |
+| Phase 04 P08 | 260s (4.3min) | 1 task | 2 files |
+| Phase 04 P09 | 258s (4.3min) | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -195,6 +197,10 @@ Recent decisions affecting current work:
 - Per-player Blackjack settlement (04-07): Each player vs dealer independently, not ranked pot distribution
 - Blackjack payout ratios (04-07): Blackjack 3:2, insurance 2:1, surrender 0.5x, push returns original bet
 - Game handler registration pattern (04-07): registerBlackjackHandlers(socket, io, roomManager, prisma) for modular game integration
+- Personalized poker state emission (04-09): Each socket gets filtered holeCards, only showing own cards until showdown
+- 30-second auto-fold timer per action (04-09): Maintains poker game flow, prevents indefinite waiting
+- Showdown uses hand evaluator + pot calculator (04-09): Side pot distribution based on best hands and contribution levels
+- Poker disconnect handling via PLAYER_DISCONNECT (04-09): Marks player folded and disconnected, auto-fold if their turn
 
 ### Pending Todos
 
@@ -211,7 +217,7 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13 18:59 UTC (Phase 4 execution)
-Stopped at: Completed 04-07-PLAN.md (Blackjack Game Integration). Full Blackjack game with server handlers, UI components, and escrow integration.
+Last session: 2026-02-13 18:07 UTC (Phase 4 execution)
+Stopped at: Completed 04-09-PLAN.md (Poker Server Handlers). Full poker server loop with personalized state, auto-fold timer, side pot showdown.
 Resume file: None
-Next: Continue Phase 4 execution with remaining plans (04-08 onwards)
+Next: Continue Phase 4 execution with Plan 04-10 (Poker UI) and 04-11 (Polish)
