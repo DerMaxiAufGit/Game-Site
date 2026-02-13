@@ -237,11 +237,9 @@ export function EconomicSettings({ settings }: EconomicSettingsProps) {
               </Label>
               <Input
                 id="defaultBetPresets"
-                name="defaultBetPresets"
                 value={betPresets}
                 onChange={(e) => setBetPresets(e.target.value)}
                 placeholder="z.B. 10, 25, 50, 100"
-                required
                 className="bg-zinc-800 border-white/10 text-white"
               />
               <input
