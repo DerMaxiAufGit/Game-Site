@@ -258,13 +258,8 @@ function handleHit(
   state: BlackjackGameState,
   playerIndex: number
 ): BlackjackGameState | Error {
-  if (state.phase !== 'player_turn') {
-    return new Error('Not in player turn phase');
-  }
-
-  if (state.currentPlayerIndex !== playerIndex) {
-    return new Error('Not your turn');
-  }
+  const validationError = validatePlayerTurn(state, playerIndex);
+  if (validationError) return validationError;
 
   const player = state.players[playerIndex];
   const handIndex = player.currentHandIndex;
@@ -276,76 +271,50 @@ function handleHit(
 
   // Deal one card
   const { dealt, remaining } = dealCards(state.deck, 1);
-  const newCards = [...hand.cards, ...dealt];
 
-  const newHand = { ...hand, cards: newCards };
+  const newState = updatePlayerHand(state, playerIndex, handIndex, (h) => {
+    const newCards = [...h.cards, ...dealt];
+    return {
+      ...h,
+      cards: newCards,
+      status: isBusted(newCards) ? 'busted' : h.status
+    };
+  });
 
-  // Check if busted
-  if (isBusted(newCards)) {
-    newHand.status = 'busted';
-  }
-
-  const newPlayers = [...state.players];
-  const newPlayer = { ...newPlayers[playerIndex] };
-  newPlayer.hands = [...newPlayer.hands];
-  newPlayer.hands[handIndex] = newHand;
-  newPlayers[playerIndex] = newPlayer;
-
-  const newState = {
-    ...state,
-    players: newPlayers,
-    deck: remaining
-  };
+  const updatedHand = newState.players[playerIndex].hands[handIndex];
 
   // If busted, auto-advance
-  if (newHand.status === 'busted') {
-    return advanceTurn(newState);
+  if (updatedHand.status === 'busted') {
+    return advanceTurn({ ...newState, deck: remaining });
   }
 
-  return newState;
+  return { ...newState, deck: remaining };
 }
 
 function handleStand(
   state: BlackjackGameState,
   playerIndex: number
 ): BlackjackGameState | Error {
-  if (state.phase !== 'player_turn') {
-    return new Error('Not in player turn phase');
-  }
-
-  if (state.currentPlayerIndex !== playerIndex) {
-    return new Error('Not your turn');
-  }
+  const validationError = validatePlayerTurn(state, playerIndex);
+  if (validationError) return validationError;
 
   const player = state.players[playerIndex];
   const handIndex = player.currentHandIndex;
-  const hand = player.hands[handIndex];
 
-  const newHand = { ...hand, status: 'stood' as HandStatus };
+  const newState = updatePlayerHand(state, playerIndex, handIndex, (hand) => ({
+    ...hand,
+    status: 'stood' as HandStatus
+  }));
 
-  const newPlayers = [...state.players];
-  const newPlayer = { ...newPlayers[playerIndex] };
-  newPlayer.hands = [...newPlayer.hands];
-  newPlayer.hands[handIndex] = newHand;
-  newPlayers[playerIndex] = newPlayer;
-
-  return advanceTurn({
-    ...state,
-    players: newPlayers
-  });
+  return advanceTurn(newState);
 }
 
 function handleDouble(
   state: BlackjackGameState,
   playerIndex: number
 ): BlackjackGameState | Error {
-  if (state.phase !== 'player_turn') {
-    return new Error('Not in player turn phase');
-  }
-
-  if (state.currentPlayerIndex !== playerIndex) {
-    return new Error('Not your turn');
-  }
+  const validationError = validatePlayerTurn(state, playerIndex);
+  if (validationError) return validationError;
 
   const player = state.players[playerIndex];
   const handIndex = player.currentHandIndex;
@@ -357,27 +326,19 @@ function handleDouble(
 
   // Deal one card
   const { dealt, remaining } = dealCards(state.deck, 1);
-  const newCards = [...hand.cards, ...dealt];
 
-  const newHand = {
-    ...hand,
-    cards: newCards,
-    bet: hand.bet * 2,
-    isDoubled: true,
-    status: isBusted(newCards) ? ('busted' as HandStatus) : ('stood' as HandStatus)
-  };
-
-  const newPlayers = [...state.players];
-  const newPlayer = { ...newPlayers[playerIndex] };
-  newPlayer.hands = [...newPlayer.hands];
-  newPlayer.hands[handIndex] = newHand;
-  newPlayers[playerIndex] = newPlayer;
-
-  return advanceTurn({
-    ...state,
-    players: newPlayers,
-    deck: remaining
+  const newState = updatePlayerHand(state, playerIndex, handIndex, (h) => {
+    const newCards = [...h.cards, ...dealt];
+    return {
+      ...h,
+      cards: newCards,
+      bet: h.bet * 2,
+      isDoubled: true,
+      status: isBusted(newCards) ? ('busted' as HandStatus) : ('stood' as HandStatus)
+    };
   });
+
+  return advanceTurn({ ...newState, deck: remaining });
 }
 
 function handleSplit(
@@ -468,30 +429,18 @@ function handleSurrender(
   state: BlackjackGameState,
   playerIndex: number
 ): BlackjackGameState | Error {
-  if (state.phase !== 'player_turn') {
-    return new Error('Not in player turn phase');
-  }
-
-  if (state.currentPlayerIndex !== playerIndex) {
-    return new Error('Not your turn');
-  }
+  const validationError = validatePlayerTurn(state, playerIndex);
+  if (validationError) return validationError;
 
   const player = state.players[playerIndex];
   const handIndex = player.currentHandIndex;
-  const hand = player.hands[handIndex];
 
-  const newHand = { ...hand, status: 'surrendered' as HandStatus };
+  const newState = updatePlayerHand(state, playerIndex, handIndex, (hand) => ({
+    ...hand,
+    status: 'surrendered' as HandStatus
+  }));
 
-  const newPlayers = [...state.players];
-  const newPlayer = { ...newPlayers[playerIndex] };
-  newPlayer.hands = [...newPlayer.hands];
-  newPlayer.hands[handIndex] = newHand;
-  newPlayers[playerIndex] = newPlayer;
-
-  return advanceTurn({
-    ...state,
-    players: newPlayers
-  });
+  return advanceTurn(newState);
 }
 
 function handlePlayerDisconnect(
@@ -524,6 +473,45 @@ function handlePlayerDisconnect(
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * Validate that current player can take action
+ */
+function validatePlayerTurn(
+  state: BlackjackGameState,
+  playerIndex: number
+): Error | null {
+  if (state.phase !== 'player_turn') {
+    return new Error('Not in player turn phase');
+  }
+
+  if (state.currentPlayerIndex !== playerIndex) {
+    return new Error('Not your turn');
+  }
+
+  return null;
+}
+
+/**
+ * Update a specific hand for a player immutably
+ */
+function updatePlayerHand(
+  state: BlackjackGameState,
+  playerIndex: number,
+  handIndex: number,
+  updateFn: (hand: PlayerHand) => PlayerHand
+): BlackjackGameState {
+  const newPlayers = [...state.players];
+  const newPlayer = { ...newPlayers[playerIndex] };
+  newPlayer.hands = [...newPlayer.hands];
+  newPlayer.hands[handIndex] = updateFn(newPlayer.hands[handIndex]);
+  newPlayers[playerIndex] = newPlayer;
+
+  return {
+    ...state,
+    players: newPlayers
+  };
+}
 
 /**
  * Update hand status based on current cards
