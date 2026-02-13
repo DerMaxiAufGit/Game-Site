@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 4 of 5 (Additional Games)
-Plan: 1 of 11 in current phase
+Plan: 2 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-13 — Completed 04-01-PLAN.md (Casino Foundation)
+Last activity: 2026-02-13 — Completed 04-02-PLAN.md (Game Type Selection Infrastructure)
 
-Progress: [█████████████████████░] 56% (28/50 total plans complete, 1/11 Phase 4 plans complete)
+Progress: [█████████████████████░] 58% (29/50 total plans complete, 2/11 Phase 4 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
+- Total plans completed: 29
 - Average duration: 5.0 min
 - Total execution time: 2.9 hours
 
@@ -30,11 +30,11 @@ Progress: [█████████████████████░] 5
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
 | 3 (Virtual Currency) | 15/15 | 51.3 min | 3.4 min |
-| 4 (Additional Games) | 1/11 | 3.4 min | 3.4 min |
+| 4 (Additional Games) | 2/11 | 10.4 min | 5.2 min |
 
 **Recent Trend:**
-- Last 5 plans: 3.4min, 3.5min, 4.05min, 2.6min, 3.4min
-- Trend: Phase 4 started, consistent velocity maintained
+- Last 5 plans: 3.5min, 4.05min, 2.6min, 3.4min, 7.0min
+- Trend: Phase 4 progressing, game infrastructure established
 
 *Updated after each plan completion*
 
@@ -52,6 +52,7 @@ Progress: [█████████████████████░] 5
 | Phase 03 P14 | 209s (3.5min) | 2 tasks | 3 files |
 | Phase 03 P15 | 158s (2.6min) | 2 tasks | 2 files |
 | Phase 04 P01 | 203s (3.4min) | 2 tasks | 10 files |
+| Phase 04 P02 | 420s (7.0min) | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -166,6 +167,10 @@ Recent decisions affecting current work:
 - Procedural Web Audio synthesis (04-01): No audio file dependencies, fully customizable casino sounds via oscillators
 - 3D CSS card flip transforms (04-01): Hardware-accelerated preserve-3d animations for natural card dealing effects
 - Chip denomination breakdown (04-01): Greedy algorithm with standard casino denominations (1, 5, 25, 100, 500, 1000)
+- GameType as union type (04-02): Type-safe game type checking ('kniffel' | 'blackjack' | 'roulette' | 'poker')
+- Game-specific settings as optional fields (04-02): pokerSettings, blackjackSettings, rouletteSettings on RoomSettings
+- Game type guards on Kniffel handlers (04-02): Prevent cross-game action pollution with explicit type checks
+- Separate max player limits per game type (04-02): Kniffel 2-6, Blackjack 1-7, Roulette 1-10, Poker 2-9
 
 ### Pending Todos
 
