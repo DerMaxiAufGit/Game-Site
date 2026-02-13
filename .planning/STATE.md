@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-11)
 ## Current Position
 
 Phase: 4 of 5 (Additional Games)
-Plan: 3 of 11 in current phase
+Plan: 5 of 11 in current phase
 Status: In progress
-Last activity: 2026-02-13 — Completed 04-03-PLAN.md (Blackjack State Machine TDD)
+Last activity: 2026-02-13 — Completed 04-05-PLAN.md (Poker State Machine TDD)
 
-Progress: [█████████████████████░] 60% (30/50 total plans complete, 3/11 Phase 4 plans complete)
+Progress: [█████████████████████░] 62% (31/50 total plans complete, 5/11 Phase 4 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
+- Total plans completed: 31
 - Average duration: 5.0 min
 - Total execution time: 3.0 hours
 
@@ -30,7 +30,7 @@ Progress: [█████████████████████░] 6
 | 1 (Foundation) | 6/6 | 111 min | 18.5 min |
 | 2 (Game Engine) | 10/11 | 31 min | 3.1 min |
 | 3 (Virtual Currency) | 15/15 | 51.3 min | 3.4 min |
-| 4 (Additional Games) | 3/11 | 20.5 min | 6.8 min |
+| 4 (Additional Games) | 5/11 | 39.9 min | 8.0 min |
 
 **Recent Trend:**
 - Last 5 plans: 2.6min, 3.4min, 7.0min, 3.4min, 10.1min
@@ -180,6 +180,10 @@ Recent decisions affecting current work:
 - Flexible calculateBetPayout parameter (04-04): Accepts single number or array for API convenience
 - Outside bet constant extraction (04-04): OUTSIDE_BETS array for DRY principle in validation
 - Adjacency validation for roulette bets (04-04): Grid-based logic for split/street/corner/line validation
+- Manual royal flush detection (04-05): poker-evaluator-ts treats royal flush as straight flush, added isRoyalFlush() check
+- Track lastAggressorIndex for betting completion (04-05): Betting round completes when action cycles back to last raiser
+- Heads-up blind posting differs (04-05): Dealer posts small blind in heads-up, left of dealer in multi-player
+- Blind escalation doubles blinds (04-05): Tournament mode doubles blinds every N hands via lastBlindIncrease tracking
 
 ### Pending Todos
 
@@ -193,9 +197,10 @@ None yet.
 - USER-SETUP.md created for Phase 1: Resend and PostgreSQL configuration needed (see 01-USER-SETUP.md)
 - **Database migration required:** GameRoom model added to schema but not pushed to database. Run `npx prisma db push` or `npx prisma migrate dev` before using game features
 
+
 ## Session Continuity
 
-Last session: 2026-02-13 18:41 UTC (Phase 4 execution)
-Stopped at: Completed 04-03-PLAN.md (Blackjack State Machine TDD). Full blackjack game logic with 6 player actions, multiplayer support, and dealer auto-play.
+Last session: 2026-02-13 17:49 UTC (Phase 4 execution)
+Stopped at: Completed 04-05-PLAN.md (Poker State Machine TDD). Texas Hold'em with hand evaluator, all betting phases, showdown, and blind escalation.
 Resume file: None
-Next: Continue Phase 4 execution with remaining plans (04-05 Poker onwards)
+Next: Continue Phase 4 execution with remaining plans (04-06 Side Pots onwards)
