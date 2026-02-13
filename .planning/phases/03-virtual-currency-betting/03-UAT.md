@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 03-virtual-currency-betting
 source: 03-01-SUMMARY.md, 03-02-SUMMARY.md, 03-03-SUMMARY.md, 03-04-SUMMARY.md, 03-05-SUMMARY.md, 03-06-SUMMARY.md, 03-07-SUMMARY.md, 03-08-SUMMARY.md, 03-09-SUMMARY.md
 started: 2026-02-12T18:00:00Z
@@ -122,47 +122,81 @@ skipped: 1
   reason: "User reported: only takes money from people who join the room. not the creator of the room. also in the transaction history the bet shows twice for user who joins. Einsatz: Table and Einsatz verfallen: Table (total balance is calculated correctly tho)"
   severity: major
   test: 8
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Two bugs: (1) room:create handler (server.js ~line 675) has zero escrow/wallet logic — creator never charged. Creator hits room:join on page mount but early-returns at line 731 with rejoined:true, skipping escrow. (2) disconnect handler removes user from room without escrow cleanup, causing duplicate BetEscrow on reconnect/rejoin."
+  artifacts:
+    - path: "server.js"
+      issue: "room:create handler missing escrow creation + wallet debit for creator"
+    - path: "server.js"
+      issue: "disconnect handler missing escrow handling on socket disconnect"
+    - path: "src/app/game/[roomId]/page.tsx"
+      issue: "Fires room:join on every mount without guarding against duplicate escrow"
+  missing:
+    - "Add escrow logic to room:create handler (check balance, debit, create BetEscrow)"
+    - "Add idempotency to room:join escrow: check for existing PENDING/LOCKED BetEscrow before creating"
+    - "Fix disconnect handler to handle escrow properly based on room status"
+  debug_session: ".planning/debug/creator-not-charged-buyin.md"
 
 - truth: "Pot display shows during bet room gameplay"
   status: failed
   reason: "User reported: no, there is no pot showing (i am testing in kniffel)."
   severity: major
   test: 10
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "GameBoard rendered in page.tsx without isBetRoom and betAmount props. Props default to false/0, so pot calculation always yields 0 and PotDisplay never renders. Room data has the values, just not forwarded."
+  artifacts:
+    - path: "src/app/game/[roomId]/page.tsx"
+      issue: "isBetRoom and betAmount not passed to <GameBoard> at lines 218-225"
+  missing:
+    - "Add isBetRoom={room.isBetRoom} betAmount={room.betAmount} to GameBoard render"
+  debug_session: ".planning/debug/pot-display-not-showing.md"
 
 - truth: "Turn timer expiry triggers auto-play or AFK warning"
   status: failed
   reason: "User reported: when the timer of a turn runs out, nothing even happens."
   severity: major
   test: 12
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "JavaScript scoping bug: autoPlay() and kickPlayerAFK() are at module scope but call sendSystemMessage() which is defined inside the app.prepare().then() closure — ReferenceError crashes silently. Also bet:afk-acknowledge has no server handler."
+  artifacts:
+    - path: "server.js"
+      issue: "autoPlay() at module scope (line 280) calls sendSystemMessage() from inner closure — ReferenceError"
+    - path: "server.js"
+      issue: "kickPlayerAFK() at module scope (line 446) has same scoping bug"
+    - path: "server.js"
+      issue: "No socket.on('bet:afk-acknowledge') handler exists"
+    - path: "src/components/betting/afk-warning.tsx"
+      issue: "Emits bet:afk-acknowledge to server that never listens"
+  missing:
+    - "Move sendSystemMessage and emitBalanceUpdate to module scope (or move autoPlay/kickPlayerAFK inside closure)"
+    - "Add bet:afk-acknowledge socket handler"
+    - "Add error handling to setTimeout in startTurnTimer"
+  debug_session: ".planning/debug/turn-timer-expiry-does-nothing.md"
 
 - truth: "Player cards in game room show Chips senden button for transfers"
   status: failed
   reason: "User reported: no button for sending there also i can't open a user profile or something when clicking the user."
   severity: major
   test: 13
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Architecturally unreachable dead code. WaitingRoom uses its own inline player list without PlayerList/TransferDialog. Ended phase renders inline results card without PlayerList. PlayerList is only mounted inside GameBoard (playing phase) where gamePhase is never 'waiting' or 'ended'."
+  artifacts:
+    - path: "src/app/game/[roomId]/page.tsx"
+      issue: "Three mutually exclusive render paths; waiting and ended have no TransferDialog"
+    - path: "src/components/game/WaitingRoom.tsx"
+      issue: "Own inline player list (lines 156-195) without PlayerList component or TransferDialog"
+    - path: "src/components/game/PlayerList.tsx"
+      issue: "showTransferButton condition unreachable inside GameBoard"
+  missing:
+    - "Add TransferDialog with Chips senden button to WaitingRoom inline player list"
+    - "Add TransferDialog with player list to ended phase render"
+  debug_session: ".planning/debug/chips-senden-button-missing.md"
 
 - truth: "Admin system settings save successfully"
   status: failed
   reason: "User reported: Ungültiges JSON-Format für Presets oder Auszahlungsquoten. when saving the settings."
   severity: major
   test: 19
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Duplicate name='defaultBetPresets' on two inputs. Visible <Input> (line 239) and hidden <input> (line 249) both have name='defaultBetPresets'. FormData.get() returns first match (visible input with comma-separated string '10, 25, 50, 100'), not the hidden input's JSON. JSON.parse fails."
+  artifacts:
+    - path: "src/components/admin/economic-settings.tsx"
+      issue: "Visible Input at line 239 has name='defaultBetPresets' — must be removed so only hidden input submits"
+  missing:
+    - "Remove name='defaultBetPresets' from visible Input at line 239"
+  debug_session: ".planning/debug/admin-settings-json-error.md"
