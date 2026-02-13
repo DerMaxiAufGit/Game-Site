@@ -27,7 +27,7 @@ export function AfkWarning() {
         countdown: data.gracePeriodSec,
         message: data.message,
       })
-      toast.error('Inaktivitaet erkannt!', {
+      toast.error('Inaktivität erkannt!', {
         description: data.message,
         duration: data.gracePeriodSec * 1000,
       })
@@ -82,9 +82,9 @@ export function AfkWarning() {
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-8 w-8 text-white" />
           <div className="flex-1">
-            <p className="text-white font-bold text-lg">Inaktivitaet erkannt!</p>
+            <p className="text-white font-bold text-lg">Inaktivität erkannt!</p>
             <p className="text-white text-sm">
-              Dein Einsatz verfaellt in{' '}
+              Dein Einsatz verfällt in{' '}
               <span className="font-bold text-xl">{warning.countdown}</span> Sekunden.
             </p>
           </div>

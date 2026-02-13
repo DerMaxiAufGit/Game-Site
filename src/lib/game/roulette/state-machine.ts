@@ -37,6 +37,7 @@ export type RouletteAction =
   | { type: 'SPIN'; winningNumber: number }
   | { type: 'PLAYER_DISCONNECT'; userId: string }
   | { type: 'PLAYER_RECONNECT'; userId: string }
+  | { type: 'ADD_PLAYER'; userId: string; displayName: string }
 
 /**
  * Create initial roulette game state
@@ -85,6 +86,9 @@ export function applyAction(
 
     case 'PLAYER_RECONNECT':
       return handlePlayerReconnect(state, action.userId)
+
+    case 'ADD_PLAYER':
+      return handleAddPlayer(state, action.userId, action.displayName)
 
     default:
       return new Error('Unknown action type')
@@ -253,6 +257,34 @@ function handlePlayerReconnect(
   return {
     ...state,
     players: newPlayers
+  }
+}
+
+/**
+ * Handle ADD_PLAYER action — add a late-joining player (works in any phase)
+ */
+function handleAddPlayer(
+  state: RouletteGameState,
+  userId: string,
+  displayName: string
+): RouletteGameState | Error {
+  // Already in game
+  if (state.players.some(p => p.userId === userId)) {
+    return state
+  }
+
+  return {
+    ...state,
+    players: [
+      ...state.players,
+      {
+        userId,
+        displayName,
+        bets: [],
+        totalBetAmount: 0,
+        isConnected: true,
+      },
+    ],
   }
 }
 

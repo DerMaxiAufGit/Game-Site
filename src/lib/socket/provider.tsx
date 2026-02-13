@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Socket } from 'socket.io-client'
 import { getSocket } from './client'
+import { toast } from 'sonner'
 
 interface BalanceChange {
   amount: number
@@ -98,6 +99,10 @@ export function SocketProvider({ children, userId }: SocketProviderProps) {
       }
     }
 
+    const onTransferReceived = (data: { fromName: string; amount: number }) => {
+      toast.info(`${data.fromName} hat dir ${data.amount} Chips gesendet!`)
+    }
+
     // Register event handlers
     socket.on('connect', onConnect)
     socket.on('disconnect', onDisconnect)
@@ -105,6 +110,7 @@ export function SocketProvider({ children, userId }: SocketProviderProps) {
     socket.on('reconnect_attempt', onReconnectAttempt)
     socket.on('connect_error', onConnectError)
     socket.on('balance:updated', onBalanceUpdated)
+    socket.on('wallet:transfer-received', onTransferReceived)
 
     // If already connected (singleton shared across routes), sync state
     if (socket.connected) {
@@ -122,6 +128,7 @@ export function SocketProvider({ children, userId }: SocketProviderProps) {
       socket.off('reconnect_attempt', onReconnectAttempt)
       socket.off('connect_error', onConnectError)
       socket.off('balance:updated', onBalanceUpdated)
+      socket.off('wallet:transfer-received', onTransferReceived)
     }
   }, [])
 

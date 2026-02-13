@@ -67,7 +67,8 @@ export type PokerAction =
   | { type: 'CALL' }
   | { type: 'RAISE'; amount: number }
   | { type: 'ALL_IN' }
-  | { type: 'PLAYER_DISCONNECT'; userId: string };
+  | { type: 'PLAYER_DISCONNECT'; userId: string }
+  | { type: 'ADD_PLAYER'; userId: string; displayName: string; startingChips: number };
 
 /**
  * Create initial poker state
@@ -141,9 +142,46 @@ export function applyPokerAction(
     case 'PLAYER_DISCONNECT':
       return handlePlayerDisconnect(state, action.userId);
 
+    case 'ADD_PLAYER':
+      return handleAddPlayer(state, action.userId, action.displayName, action.startingChips);
+
     default:
       return new Error('Unknown action type');
   }
+}
+
+/**
+ * Handle ADD_PLAYER — add a late-joining player who sits out until the next hand
+ */
+function handleAddPlayer(
+  state: PokerGameState,
+  userId: string,
+  displayName: string,
+  startingChips: number
+): PokerGameState | Error {
+  if (state.players.some(p => p.userId === userId)) {
+    return state;
+  }
+
+  return {
+    ...state,
+    players: [
+      ...state.players,
+      {
+        userId,
+        displayName,
+        holeCards: [],
+        chips: startingChips,
+        currentBet: 0,
+        totalBetInHand: 0,
+        isFolded: true,
+        isAllIn: false,
+        isConnected: true,
+        seatIndex: state.players.length,
+        isSittingOut: true,
+      },
+    ],
+  };
 }
 
 /**

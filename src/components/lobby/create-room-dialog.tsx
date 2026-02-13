@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSocket } from '@/lib/socket/provider'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -18,6 +18,9 @@ interface CreateRoomDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+// Casino games always use real currency betting on the table
+const CASINO_GAMES: GameType[] = ['blackjack', 'roulette', 'poker']
 
 export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) {
   const t = useTranslations()
@@ -46,6 +49,15 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
   const [spinTimer, setSpinTimer] = useState('30')
   const [startingBlinds, setStartingBlinds] = useState('10')
 
+  const isCasinoGame = CASINO_GAMES.includes(gameType)
+
+  // Auto-set isBetRoom for casino games
+  useEffect(() => {
+    if (isCasinoGame) {
+      setIsBetRoom(true)
+    }
+  }, [gameType, isCasinoGame])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -60,8 +72,8 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
       return
     }
 
-    // Validate bet settings
-    if (isBetRoom) {
+    // Validate bet settings (only for Kniffel bet rooms)
+    if (isBetRoom && !isCasinoGame) {
       if (!betAmount || betAmount <= 0) {
         toast.error('Einsatz muss größer als 0 sein')
         return
@@ -81,7 +93,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
     }
 
     // Validate custom payout ratios
-    if (isBetRoom && useCustomPayout) {
+    if (isBetRoom && !isCasinoGame && useCustomPayout) {
       const sum = payoutRatios.reduce((acc, r) => acc + r.percentage, 0)
       if (sum !== 100) {
         toast.error('Auszahlungsanteile müssen insgesamt 100% ergeben')
@@ -99,10 +111,11 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
       turnTimer: parseInt(turnTimer, 10),
       afkThreshold: parseInt(afkThreshold, 10),
       isBetRoom,
-      betAmount: isBetRoom ? betAmount : undefined,
-      minBet: isBetRoom && minBet ? minBet : undefined,
-      maxBet: isBetRoom && maxBet ? maxBet : undefined,
-      payoutRatios: isBetRoom && useCustomPayout ? payoutRatios : undefined,
+      // Only set kniffel-style bet settings for non-casino games
+      betAmount: isBetRoom && !isCasinoGame ? betAmount : undefined,
+      minBet: isBetRoom && !isCasinoGame && minBet ? minBet : undefined,
+      maxBet: isBetRoom && !isCasinoGame && maxBet ? maxBet : undefined,
+      payoutRatios: isBetRoom && !isCasinoGame && useCustomPayout ? payoutRatios : undefined,
       rouletteSettings: gameType === 'roulette' ? {
         spinTimerSec: parseInt(spinTimer, 10)
       } : undefined,
@@ -338,32 +351,48 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
               </div>
             </div>
 
-            {/* Free/Bet Toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="betType" className="text-white">
-                Spielmodus
-              </Label>
-              <div className="flex gap-2">
-                <Badge
-                  variant={!isBetRoom ? 'default' : 'outline'}
-                  className={`cursor-pointer ${!isBetRoom ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
-                  onClick={() => setIsBetRoom(false)}
-                >
-                  Kostenlos
-                </Badge>
-                <Badge
-                  variant={isBetRoom ? 'default' : 'outline'}
-                  className={`cursor-pointer flex items-center gap-1 ${isBetRoom ? 'bg-amber-500 hover:bg-amber-600' : 'hover:bg-zinc-800'}`}
-                  onClick={() => setIsBetRoom(true)}
-                >
-                  <Coins className="h-3 w-3" />
-                  Einsatz
-                </Badge>
+            {/* Free/Bet Toggle — only for Kniffel */}
+            {!isCasinoGame && (
+              <div className="flex items-center justify-between">
+                <Label htmlFor="betType" className="text-white">
+                  Spielmodus
+                </Label>
+                <div className="flex gap-2">
+                  <Badge
+                    variant={!isBetRoom ? 'default' : 'outline'}
+                    className={`cursor-pointer ${!isBetRoom ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
+                    onClick={() => setIsBetRoom(false)}
+                  >
+                    Kostenlos
+                  </Badge>
+                  <Badge
+                    variant={isBetRoom ? 'default' : 'outline'}
+                    className={`cursor-pointer flex items-center gap-1 ${isBetRoom ? 'bg-amber-500 hover:bg-amber-600' : 'hover:bg-zinc-800'}`}
+                    onClick={() => setIsBetRoom(true)}
+                  >
+                    <Coins className="h-3 w-3" />
+                    Einsatz
+                  </Badge>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Bet Amount (shown only for bet rooms) */}
-            {isBetRoom && (
+            {/* Casino game hint */}
+            {isCasinoGame && (
+              <div className="flex items-center gap-2 p-3 border border-amber-600/30 rounded-lg bg-amber-900/10">
+                <Coins className="h-4 w-4 text-amber-400 shrink-0" />
+                <p className="text-xs text-amber-300">
+                  {gameType === 'poker'
+                    ? 'Poker verwendet Buy-ins. Einsätze werden am Tisch platziert.'
+                    : gameType === 'blackjack'
+                    ? 'Einsätze werden jede Runde am Tisch platziert.'
+                    : 'Einsätze werden jede Runde am Tisch platziert.'}
+                </p>
+              </div>
+            )}
+
+            {/* Kniffel Bet Amount (shown only for Kniffel bet rooms) */}
+            {isBetRoom && !isCasinoGame && (
               <div className="space-y-3 p-4 border border-zinc-800 rounded-lg bg-zinc-800/50">
                 <div className="space-y-2">
                   <Label className="text-white">Einsatz pro Spieler</Label>

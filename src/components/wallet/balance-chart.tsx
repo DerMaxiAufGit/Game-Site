@@ -36,21 +36,23 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 export function BalanceChart({ data }: BalanceChartProps) {
-  // Empty state: need at least 2 data points for a meaningful chart
-  if (!data || data.length < 2) {
+  if (!data || data.length === 0) {
     return (
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">Guthaben-Verlauf (30 Tage)</h3>
+        <h3 className="text-lg font-semibold mb-4">Guthaben-Verlauf</h3>
         <div className="h-[250px] flex items-center justify-center text-gray-500">
-          Noch nicht genug Daten fuer ein Diagramm
+          Noch keine Daten vorhanden
         </div>
       </Card>
     )
   }
 
+  const days = data.length
+  const label = days >= 30 ? '30 Tage' : days === 1 ? '1 Tag' : `${days} Tage`
+
   return (
     <Card className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Guthaben-Verlauf (30 Tage)</h3>
+      <h3 className="text-lg font-semibold mb-4">Guthaben-Verlauf ({label})</h3>
       <ResponsiveContainer width="100%" height={250}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />

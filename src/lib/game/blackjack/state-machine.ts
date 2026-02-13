@@ -81,7 +81,8 @@ export type BlackjackAction =
   | { type: 'SPLIT' }
   | { type: 'INSURANCE'; payload: { amount: number } }
   | { type: 'SURRENDER' }
-  | { type: 'PLAYER_DISCONNECT'; payload: { userId: string } };
+  | { type: 'PLAYER_DISCONNECT'; payload: { userId: string } }
+  | { type: 'ADD_PLAYER'; payload: { userId: string; displayName: string } };
 
 // ============================================================================
 // Core Functions
@@ -139,6 +140,11 @@ export function applyBlackjackAction(
   action: BlackjackAction,
   userId: string
 ): BlackjackGameState | Error {
+  // ADD_PLAYER doesn't need an existing player
+  if (action.type === 'ADD_PLAYER') {
+    return handleAddPlayer(state, action.payload.userId, action.payload.displayName);
+  }
+
   // Find player
   const playerIndex = state.players.findIndex(p => p.userId === userId);
   if (action.type !== 'PLAYER_DISCONNECT' && playerIndex === -1) {
@@ -178,6 +184,44 @@ export function applyBlackjackAction(
 // ============================================================================
 // Action Handlers
 // ============================================================================
+
+/**
+ * Handle ADD_PLAYER — add a late-joining player so they can bet in the current or next round
+ */
+function handleAddPlayer(
+  state: BlackjackGameState,
+  userId: string,
+  displayName: string
+): BlackjackGameState | Error {
+  if (state.players.some(p => p.userId === userId)) {
+    return state;
+  }
+
+  const handCount = state.settings.soloHandCount || 1;
+
+  return {
+    ...state,
+    players: [
+      ...state.players,
+      {
+        userId,
+        displayName,
+        hands: Array.from({ length: handCount }, () => ({
+          cards: [],
+          bet: 0,
+          status: 'playing' as HandStatus,
+          isDoubled: false,
+          isSplit: false,
+        })),
+        currentHandIndex: 0,
+        bet: 0,
+        insurance: 0,
+        isActive: true,
+        isConnected: true,
+      },
+    ],
+  };
+}
 
 function handlePlaceBet(
   state: BlackjackGameState,
@@ -567,7 +611,8 @@ function advanceTurn(state: BlackjackGameState): BlackjackGameState {
 
 function dealerTurn(state: BlackjackGameState): BlackjackGameState {
   // Transition to dealer_turn phase and reveal hole card
-  let newState = {
+  // Does NOT auto-play — handler steps through one card at a time for animation
+  return {
     ...state,
     phase: 'dealer_turn' as BlackjackPhase,
     dealer: {
@@ -575,32 +620,32 @@ function dealerTurn(state: BlackjackGameState): BlackjackGameState {
       hidden: false // Reveal hole card
     }
   };
+}
 
-  // Auto-play dealer's hand
-  let deck = [...newState.deck];
-  let dealerCards = [...newState.dealer.cards];
+/**
+ * Draw one card for the dealer. Returns new state.
+ * If dealer should stand (17+), transitions to settlement instead.
+ */
+export function dealerStep(state: BlackjackGameState): BlackjackGameState {
+  const dealerValue = getBestValue(state.dealer.cards);
 
-  while (true) {
-    const value = getBestValue(dealerCards);
-
-    if (value >= 17) {
-      break; // Stand on 17+
-    }
-
-    // Hit
-    const { dealt, remaining } = dealCards(deck, 1);
-    dealerCards = [...dealerCards, ...dealt];
-    deck = remaining;
+  // Dealer stands on 17+
+  if (dealerValue >= 17) {
+    return {
+      ...state,
+      phase: 'settlement' as BlackjackPhase
+    };
   }
 
-  // Move to settlement
+  // Hit: draw one card
+  const { dealt, remaining } = dealCards([...state.deck], 1);
+
   return {
-    ...newState,
+    ...state,
     dealer: {
-      ...newState.dealer,
-      cards: dealerCards
+      ...state.dealer,
+      cards: [...state.dealer.cards, ...dealt]
     },
-    deck,
-    phase: 'settlement'
+    deck: remaining
   };
 }

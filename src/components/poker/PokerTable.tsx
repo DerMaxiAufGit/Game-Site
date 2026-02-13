@@ -8,8 +8,10 @@ import { PotDisplay } from './PotDisplay';
 import { BettingControls } from './BettingControls';
 import { GameChat } from '@/components/game/GameChat';
 import type { PokerGameState } from '@/lib/game/poker/state-machine';
+import { GameBalance } from '@/components/wallet/game-balance';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface PokerTableProps {
   gameState: PokerGameState;
@@ -144,7 +146,7 @@ export function PokerTable({
 
     socket.emit('poker:action', actionData, (response: any) => {
       if (!response?.success) {
-        console.error('Poker action failed:', response?.error);
+        toast.error(response?.error || 'Aktion fehlgeschlagen');
       }
     });
   };
@@ -187,9 +189,12 @@ export function PokerTable({
             </p>
           </div>
 
-          {/* Blinds Info */}
-          <div className="absolute top-4 right-4 bg-gray-900/90 px-3 py-1 rounded-lg text-sm text-white">
-            <p>SB: ${gameState.blinds.small} / BB: ${gameState.blinds.big}</p>
+          {/* Blinds Info + Balance */}
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <GameBalance />
+            <div className="bg-gray-900/90 px-3 py-1 rounded-lg text-sm text-white">
+              <p>SB: ${gameState.blinds.small} / BB: ${gameState.blinds.big}</p>
+            </div>
           </div>
 
           {/* Hand Number */}
@@ -245,8 +250,8 @@ export function PokerTable({
         </div>
       )}
 
-      {/* Game Chat (right side) */}
-      <div className="absolute right-4 top-4 bottom-4 w-80">
+      {/* Game Chat (right side, hidden on smaller screens) */}
+      <div className="absolute right-4 top-4 bottom-4 w-72 hidden xl:block">
         <GameChat roomId={roomId} socket={socket} currentUserId={currentUserId} />
       </div>
     </div>

@@ -9,6 +9,7 @@ interface CardProps {
   faceDown?: boolean;
   isDealing?: boolean;
   className?: string;
+  style?: React.CSSProperties;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -18,7 +19,7 @@ const SIZE_CLASSES = {
   lg: 'w-[100px] h-[140px]',
 };
 
-export function Card({ rank, suit, faceDown = false, isDealing = false, className, size = 'md' }: CardProps) {
+export function Card({ rank, suit, faceDown = false, isDealing = false, className, style, size = 'md' }: CardProps) {
   const color = SUIT_COLORS[suit];
   const symbol = SUIT_SYMBOLS[suit];
   const textColor = color === 'red' ? 'text-red-600' : 'text-gray-900';
@@ -32,7 +33,7 @@ export function Card({ rank, suit, faceDown = false, isDealing = false, classNam
         isDealing && 'animate-card-deal',
         className
       )}
-      style={{ transformStyle: 'preserve-3d' }}
+      style={{ transformStyle: 'preserve-3d', ...style }}
     >
       {/* Card Back */}
       <div

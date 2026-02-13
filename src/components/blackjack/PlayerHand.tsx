@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { Card } from '@/components/casino/Card';
 import { ChipStack } from '@/components/casino/ChipStack';
 import type { PlayerHand as PlayerHandType } from '@/lib/game/blackjack/state-machine';
@@ -9,11 +10,12 @@ import { cn } from '@/lib/utils';
 interface PlayerHandProps {
   hand: PlayerHandType;
   isActive: boolean;
+  isMyTurn?: boolean;
   playerName: string;
   isCurrentUser: boolean;
 }
 
-export function PlayerHand({ hand, isActive, playerName, isCurrentUser }: PlayerHandProps) {
+export function PlayerHand({ hand, isActive, isMyTurn = false, playerName, isCurrentUser }: PlayerHandProps) {
   const handValue = getBestValue(hand.cards);
   const handValues = calculateHandValue(hand.cards);
   const isSoft = handValues.hi <= 21 && handValues.hi !== handValues.lo && handValue === handValues.hi;
@@ -21,6 +23,13 @@ export function PlayerHand({ hand, isActive, playerName, isCurrentUser }: Player
   const isBlackjack = hand.status === 'blackjack';
   const isStood = hand.status === 'stood';
   const isSurrendered = hand.status === 'surrendered';
+  const prevCountRef = useRef(hand.cards.length);
+
+  useEffect(() => {
+    prevCountRef.current = hand.cards.length;
+  }, [hand.cards.length]);
+
+  const prevCount = prevCountRef.current;
 
   return (
     <div
@@ -33,15 +42,27 @@ export function PlayerHand({ hand, isActive, playerName, isCurrentUser }: Player
     >
       {/* Cards */}
       <div className="flex gap-2 mb-3">
-        {hand.cards.map((card, index) => (
-          <Card
-            key={index}
-            rank={card.rank}
-            suit={card.suit}
-            size="md"
-            className="transition-all duration-300 hover:translate-y-[-4px]"
-          />
-        ))}
+        {hand.cards.map((card, index) => {
+          const isNew = index >= prevCount;
+
+          return (
+            <Card
+              key={`${card.rank}-${card.suit}-${index}`}
+              rank={card.rank}
+              suit={card.suit}
+              size="md"
+              className={cn(
+                'transition-all duration-300 hover:translate-y-[-4px]',
+                isNew && 'animate-card-slide-in'
+              )}
+              style={isNew ? {
+                '--deck-offset-x': '-300px',
+                '--deck-offset-y': '-100px',
+                animationDelay: `${(index - prevCount) * 150}ms`,
+              } as React.CSSProperties : undefined}
+            />
+          );
+        })}
       </div>
 
       {/* Hand Value */}
@@ -89,7 +110,7 @@ export function PlayerHand({ hand, isActive, playerName, isCurrentUser }: Player
       {/* Active Indicator */}
       {isActive && (
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse">
-          Dein Zug
+          {isMyTurn ? 'Dein Zug' : 'Am Zug'}
         </div>
       )}
     </div>

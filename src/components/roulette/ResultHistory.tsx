@@ -31,7 +31,7 @@ export function ResultHistory({ results, maxDisplay = 20, className }: ResultHis
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {/* Result chips */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <div className="flex items-center gap-2 overflow-x-auto pt-2 pb-2">
         <span className="text-sm font-semibold text-gray-300 whitespace-nowrap">Letzte {maxDisplay}:</span>
         <div className="flex gap-1.5">
           {displayResults.map((num, index) => {

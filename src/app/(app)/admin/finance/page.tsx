@@ -78,7 +78,7 @@ export default async function AdminFinancePage() {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <EconomicSettings settings={settings} />
+            <EconomicSettings key={settings.updatedAt.toISOString()} settings={settings} />
           </TabsContent>
         </Tabs>
       </div>

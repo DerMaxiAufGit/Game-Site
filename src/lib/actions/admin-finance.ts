@@ -197,13 +197,14 @@ export async function getAdminTransactionLog(options?: {
 export async function getSystemSettings() {
   await requireAdmin()
 
-  // Get the single SystemSettings row (or create if doesn't exist)
-  let settings = await prisma.systemSettings.findFirst()
+  // Always get the most recently updated row (handles legacy duplicates)
+  let settings = await prisma.systemSettings.findFirst({
+    orderBy: { updatedAt: 'desc' },
+  })
 
   if (!settings) {
-    // Create default settings if none exist
     settings = await prisma.systemSettings.create({
-      data: {},
+      data: { id: 'system-config' },
     })
   }
 
@@ -294,8 +295,10 @@ export async function updateSystemSettings(
 
     const validatedData = finalValidation.data
 
-    // Find the single settings row
-    const existingSettings = await prisma.systemSettings.findFirst()
+    // Find the single settings row (most recently updated)
+    const existingSettings = await prisma.systemSettings.findFirst({
+      orderBy: { updatedAt: 'desc' },
+    })
 
     if (existingSettings) {
       // Update existing
@@ -385,7 +388,7 @@ export async function adjustUserBalance(
 
         if (!wallet) {
           // Get starting balance from settings
-          const settings = await tx.systemSettings.findFirst()
+          const settings = await tx.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
           wallet = await tx.wallet.create({
             data: {
               userId,
@@ -501,7 +504,7 @@ export async function bulkAdjustBalance(
     // Apply adjustment to all users in one transaction
     const result = await prisma.$transaction(
       async (tx) => {
-        const settings = await tx.systemSettings.findFirst()
+        const settings = await tx.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
         const startingBalance = settings?.startingBalance || 1000
         let affected = 0
         const affectedUserIds: string[] = []
@@ -594,7 +597,7 @@ export async function freezeWallet(userId: string): Promise<ActionState> {
     })
 
     if (!wallet) {
-      const settings = await prisma.systemSettings.findFirst()
+      const settings = await prisma.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
       wallet = await prisma.wallet.create({
         data: {
           userId,
@@ -704,7 +707,7 @@ export async function getSuspiciousActivity(): Promise<SuspiciousAlert[]> {
   await requireAdmin()
 
   // Get SystemSettings for alert thresholds
-  const settings = await prisma.systemSettings.findFirst()
+  const settings = await prisma.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
   const alertTransferLimit = settings?.alertTransferLimit || 2000
   const alertBalanceDropPct = settings?.alertBalanceDropPct || 50
   const transferDailyLimit = settings?.transferDailyLimit || 5000

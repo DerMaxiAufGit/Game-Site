@@ -12,7 +12,6 @@ interface PlayerListProps {
   currentPlayerIndex: number
   currentUserId: string
   spectatorCount?: number
-  gamePhase?: string
 }
 
 export function PlayerList({
@@ -20,11 +19,7 @@ export function PlayerList({
   currentPlayerIndex,
   currentUserId,
   spectatorCount = 0,
-  gamePhase = 'waiting'
 }: PlayerListProps) {
-  // Show transfer button only when NOT in active gameplay (waiting or ended)
-  const showTransferButton = gamePhase === 'waiting' || gamePhase === 'ended'
-
   return (
     <div className="flex flex-wrap gap-3 rounded-lg bg-gray-800/50 p-4">
       {players.map((player, index) => {
@@ -67,8 +62,8 @@ export function PlayerList({
               </span>
             </div>
 
-            {/* Transfer Button (only for other players, only when not actively playing) */}
-            {!isCurrentUser && showTransferButton && (
+            {/* Transfer Button */}
+            {!isCurrentUser && (
               <div className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <TransferDialog
                   recipientId={player.userId}

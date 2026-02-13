@@ -47,32 +47,34 @@ export function BalanceWidget() {
 
   return (
     <BalancePopover>
-      <Link href="/wallet" className="block">
-        <div
-          className={cn(
-            'bg-zinc-800/50 rounded-lg p-4 transition-all duration-300 hover:bg-zinc-800/70 cursor-pointer border border-transparent hover:border-white/10',
-            isFlashing && flashType === 'positive' && 'animate-flash-green',
-            isFlashing && flashType === 'negative' && 'animate-flash-red'
-          )}
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Coins className="h-4 w-4 text-green-500" />
-            <span className="text-xs text-gray-400 uppercase tracking-wide">Guthaben</span>
+      <div>
+        <Link href="/wallet" className="block">
+          <div
+            className={cn(
+              'bg-zinc-800/50 rounded-lg p-4 transition-all duration-300 hover:bg-zinc-800/70 cursor-pointer border border-transparent hover:border-white/10',
+              isFlashing && flashType === 'positive' && 'animate-flash-green',
+              isFlashing && flashType === 'negative' && 'animate-flash-red'
+            )}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Coins className="h-4 w-4 text-green-500" />
+              <span className="text-xs text-gray-400 uppercase tracking-wide">Guthaben</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <CountUp
+                start={countFrom ?? balance}
+                end={balance}
+                duration={0.8}
+                separator="."
+                decimals={0}
+                preserveValue={true}
+                className="text-2xl font-bold text-white"
+              />
+              <span className="text-sm text-gray-400 ml-1">Chips</span>
+            </div>
           </div>
-          <div className="flex items-baseline gap-1">
-            <CountUp
-              start={countFrom ?? balance}
-              end={balance}
-              duration={0.8}
-              separator="."
-              decimals={0}
-              preserveValue={true}
-              className="text-2xl font-bold text-white"
-            />
-            <span className="text-sm text-gray-400 ml-1">Chips</span>
-          </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
     </BalancePopover>
   )
 }

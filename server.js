@@ -13,9 +13,9 @@ import { getWalletWithUser, getTransactionHistory, creditBalance, debitBalance, 
 import { calculatePayouts } from './src/lib/wallet/payout.js'
 import { canTransition } from './src/lib/wallet/escrow.js'
 import { registerBlackjackHandlers } from './src/lib/game/blackjack/handlers.js'
-import { createBlackjackState } from './src/lib/game/blackjack/state-machine.js'
-import { registerRouletteHandlers } from './src/lib/game/roulette/handlers.js'
-import { createInitialState as createRouletteState } from './src/lib/game/roulette/state-machine.js'
+import { createBlackjackState, applyBlackjackAction } from './src/lib/game/blackjack/state-machine.js'
+import { registerRouletteHandlers, startSpinTimer } from './src/lib/game/roulette/handlers.js'
+import { createInitialState as createRouletteState, applyAction as applyRouletteAction } from './src/lib/game/roulette/state-machine.js'
 import { registerPokerHandlers } from './src/lib/game/poker/handlers.js'
 import { createPokerState, applyPokerAction } from './src/lib/game/poker/state-machine.js'
 import { createDeck, shuffleDeck } from './src/lib/game/cards/deck.js'
@@ -751,7 +751,9 @@ app.prepare().then(() => {
         }
 
         // Validate bet settings
-        if (settings.isBetRoom) {
+        // Casino games (blackjack, roulette, poker) handle betting on the table — no upfront betAmount needed
+        const isCasinoGame = ['blackjack', 'roulette', 'poker'].includes(settings.gameType)
+        if (settings.isBetRoom && !isCasinoGame) {
           if (!settings.betAmount || settings.betAmount <= 0) {
             return callback({ success: false, error: 'Bet rooms require a positive bet amount' })
           }
@@ -777,8 +779,8 @@ app.prepare().then(() => {
           timeoutPromise
         ])
 
-        // [ESCROW_CREATE_ROOM_CREATE] - Creator escrow for bet rooms
-        if (settings.isBetRoom) {
+        // [ESCROW_CREATE_ROOM_CREATE] - Creator escrow for bet rooms (skip for casino games — they bet on the table)
+        if (settings.isBetRoom && !isCasinoGame) {
           const wallet = await getWalletWithUser(socket.data.userId)
           if (wallet.frozenAt !== null) {
             roomManager.removeRoom(room.id)
@@ -845,8 +847,9 @@ app.prepare().then(() => {
         return
       }
 
-      // For bet rooms, handle escrow
-      if (room.isBetRoom && room.status === 'waiting') {
+      // For bet rooms, handle escrow (skip for casino games — they bet on the table)
+      const isCasinoGameJoin = ['blackjack', 'roulette', 'poker'].includes(room.gameType)
+      if (room.isBetRoom && room.status === 'waiting' && !isCasinoGameJoin) {
         try {
           // Get wallet
           const wallet = await getWalletWithUser(socket.data.userId)
@@ -937,6 +940,58 @@ app.prepare().then(() => {
         socket.emit('room:error', { message: result.error })
         return
       }
+
+      // Late-join promotion for casino games: promote spectator to player and add to game state
+      let lateJoinPromoted = false
+      if (result.spectator && room.gameState) {
+        const promoteToPlayer = () => {
+          room.spectators = room.spectators.filter(id => id !== socket.data.userId)
+          if (!room.players.some(p => p.userId === socket.data.userId)) {
+            room.players.push({ userId: socket.data.userId, displayName: socket.data.displayName, isReady: true })
+          }
+          result.spectator = false
+          lateJoinPromoted = true
+        }
+
+        if (room.gameType === 'roulette') {
+          console.log(`[LATE-JOIN] Roulette ADD_PLAYER for ${socket.data.userId} (${socket.data.displayName}), current players:`, room.gameState.players?.map(p => p.userId))
+          const addResult = applyRouletteAction(room.gameState, {
+            type: 'ADD_PLAYER',
+            userId: socket.data.userId,
+            displayName: socket.data.displayName,
+          })
+          if (!(addResult instanceof Error)) {
+            promoteToPlayer()
+            room.gameState = addResult
+            console.log(`[LATE-JOIN] Success! Players now:`, room.gameState.players?.map(p => p.userId))
+          } else {
+            console.log(`[LATE-JOIN] ADD_PLAYER failed:`, addResult.message)
+          }
+        } else if (room.gameType === 'blackjack') {
+          const addResult = applyBlackjackAction(room.gameState, {
+            type: 'ADD_PLAYER',
+            payload: { userId: socket.data.userId, displayName: socket.data.displayName },
+          }, socket.data.userId)
+          if (!(addResult instanceof Error)) {
+            promoteToPlayer()
+            room.gameState = addResult
+          }
+        } else if (room.gameType === 'poker') {
+          const startingChips = room.pokerSettings?.startingChips || 1000
+          const addResult = applyPokerAction(room.gameState, {
+            type: 'ADD_PLAYER',
+            userId: socket.data.userId,
+            displayName: socket.data.displayName,
+            startingChips,
+          }, socket.data.userId)
+          if (!(addResult instanceof Error)) {
+            promoteToPlayer()
+            room.gameState = addResult
+          }
+        }
+      }
+
+      // Join socket room FIRST, then emit — so the joining player receives all updates
       socket.join(roomId)
       callback?.({ success: true, room: result.room, spectator: result.spectator || false })
       if (!result.rejoined) {
@@ -946,6 +1001,10 @@ app.prepare().then(() => {
           spectator: result.spectator || false
         })
         sendSystemMessage(roomId, io, `${socket.data.displayName} ist beigetreten`)
+      }
+      // Emit game state update AFTER socket.join so the late-joiner receives it
+      if (lateJoinPromoted) {
+        io.to(roomId).emit('game:state-update', { state: room.gameState, roomId })
       }
       // Broadcast full room state to all players in the room
       io.to(roomId).emit('room:update', result.room)
@@ -1387,18 +1446,21 @@ app.prepare().then(() => {
         return
       }
 
+      // House games (blackjack, roulette) can be played solo; others need 2+
+      const isHouseGame = room.gameType === 'blackjack' || room.gameType === 'roulette'
+      const minPlayers = isHouseGame ? 1 : 2
+
       let gamePlayers
       if (force) {
-        // Force start: need at least 2 players total in the room
-        if (room.players.length < 2) {
-          callback?.({ error: 'Need at least 2 players' })
+        if (room.players.length < minPlayers) {
+          callback?.({ error: minPlayers === 1 ? 'Need at least 1 player' : 'Need at least 2 players' })
           return
         }
         gamePlayers = room.players
       } else {
         const readyPlayers = room.players.filter(p => p.isReady)
-        if (readyPlayers.length < 2) {
-          callback?.({ error: 'Need at least 2 ready players' })
+        if (readyPlayers.length < minPlayers) {
+          callback?.({ error: minPlayers === 1 ? 'Need at least 1 ready player' : 'Need at least 2 ready players' })
           return
         }
         // Move non-ready players to spectators
@@ -1437,11 +1499,17 @@ app.prepare().then(() => {
         room.gameState = createBlackjackState(playerData, settings)
       } else if (room.gameType === 'roulette') {
         // Use createRouletteState from state-machine.ts
+        const rouletteTimerSec = room.rouletteSettings?.spinTimerSec ?? 30
         const settings = {
-          spinTimerSec: room.rouletteSettings?.spinTimerSec || 30,
-          isManualSpin: room.rouletteSettings?.isManualSpin ?? true
+          spinTimerSec: rouletteTimerSec,
+          isManualSpin: rouletteTimerSec === 0
         }
         room.gameState = createRouletteState(playerData, settings)
+
+        // Start auto-spin timer if not manual
+        if (!settings.isManualSpin && settings.spinTimerSec > 0) {
+          startSpinTimer(roomId, io, roomManager, prisma)
+        }
       } else if (room.gameType === 'poker') {
         // Create shuffled deck with CSPRNG
         const deck = shuffleDeck(createDeck())
