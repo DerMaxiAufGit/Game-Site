@@ -12,6 +12,8 @@ import { rollDice } from './src/lib/game/crypto-rng.js'
 import { getWalletWithUser, getTransactionHistory, creditBalance, debitBalance, getSystemSettings } from './src/lib/wallet/transactions.js'
 import { calculatePayouts } from './src/lib/wallet/payout.js'
 import { canTransition } from './src/lib/wallet/escrow.js'
+import { registerBlackjackHandlers } from './src/lib/game/blackjack/handlers.js'
+import { createBlackjackState } from './src/lib/game/blackjack/state-machine.js'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
@@ -615,6 +617,9 @@ app.prepare().then(() => {
 
     // Join user-specific room for balance updates
     socket.join(`user:${socket.data.userId}`)
+
+    // Register game-specific handlers
+    registerBlackjackHandlers(socket, io, roomManager, prisma)
 
     // Handle wallet balance request
     socket.on('wallet:get-balance', async (callback) => {
@@ -1384,12 +1389,13 @@ app.prepare().then(() => {
         room.gameState.phase = 'rolling'
         room.gameState.turnStartedAt = Date.now()
       } else if (room.gameType === 'blackjack') {
-        // Placeholder state for Blackjack (will be replaced by Plan 04-03)
-        room.gameState = {
-          phase: 'betting',
-          gameType: 'blackjack',
-          players: playerData
+        // Use createBlackjackState from state-machine.ts
+        const settings = {
+          deckCount: room.blackjackSettings?.deckCount || 6,
+          turnTimer: room.turnTimer,
+          soloHandCount: room.blackjackSettings?.soloHandCount || 1
         }
+        room.gameState = createBlackjackState(playerData, settings)
       } else if (room.gameType === 'roulette') {
         // Placeholder state for Roulette (will be replaced by Plan 04-04)
         room.gameState = {
