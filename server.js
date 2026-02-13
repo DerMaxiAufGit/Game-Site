@@ -252,6 +252,33 @@ function buildRankings(gameState) {
   return rankings
 }
 
+// Helper function to send system messages (module scope for timer access)
+function sendSystemMessage(roomId, io, content) {
+  const room = roomManager.getRoom(roomId)
+  if (!room) return
+  const message = {
+    id: randomUUID(),
+    roomId,
+    userId: 'system',
+    displayName: 'System',
+    content,
+    isSystem: true,
+    timestamp: Date.now()
+  }
+  room.chat.push(message)
+  if (room.chat.length > 100) room.chat.shift()
+  io.to(roomId).emit('chat:message', message)
+}
+
+// Helper function to emit balance updates (module scope for timer access)
+function emitBalanceUpdate(io, userId, newBalance, change, description) {
+  io.to(`user:${userId}`).emit('balance:updated', {
+    newBalance,
+    change,
+    description
+  })
+}
+
 // Turn timer management
 const turnTimers = new Map() // roomId -> timeout
 const afkWarnings = new Map() // roomId:userId -> timeout
@@ -261,8 +288,12 @@ function startTurnTimer(roomId, io) {
   const room = roomManager.getRoom(roomId)
   if (!room || !room.gameState || room.gameState.phase === 'ended') return
 
-  const timeout = setTimeout(() => {
-    autoPlay(roomId, io)
+  const timeout = setTimeout(async () => {
+    try {
+      await autoPlay(roomId, io)
+    } catch (error) {
+      console.error('Turn timer auto-play error:', error)
+    }
   }, room.gameState.turnDuration * 1000)
 
   turnTimers.set(roomId, timeout)
@@ -572,35 +603,6 @@ app.prepare().then(() => {
       next(new Error('Authentication required'))
     }
   })
-
-  // Helper function to send system messages
-  function sendSystemMessage(roomId, io, content) {
-    const room = roomManager.getRoom(roomId)
-    if (!room) return
-
-    const message = {
-      id: randomUUID(),
-      roomId,
-      userId: 'system',
-      displayName: 'System',
-      content,
-      isSystem: true,
-      timestamp: Date.now()
-    }
-
-    room.chat.push(message)
-    if (room.chat.length > 100) room.chat.shift()
-    io.to(roomId).emit('chat:message', message)
-  }
-
-  // Helper function to emit balance updates
-  function emitBalanceUpdate(io, userId, newBalance, change, description) {
-    io.to(`user:${userId}`).emit('balance:updated', {
-      newBalance,
-      change,
-      description
-    })
-  }
 
   // Socket.IO connection handling
   io.on('connection', (socket) => {
@@ -1437,6 +1439,31 @@ app.prepare().then(() => {
       }
 
       callback?.({ success: true })
+    })
+
+    // [AFK_ACKNOWLEDGE_HANDLER]
+    socket.on('bet:afk-acknowledge', ({ roomId }) => {
+      const room = roomManager.getRoom(roomId)
+      if (!room) return
+
+      const warningKey = `${roomId}:${socket.data.userId}`
+      const existingWarning = afkWarnings.get(warningKey)
+
+      if (existingWarning) {
+        clearTimeout(existingWarning)
+        afkWarnings.delete(warningKey)
+
+        // Reset consecutive inactive count
+        const player = room.gameState?.players.find(p => p.userId === socket.data.userId)
+        if (player) {
+          player.consecutiveInactive = 0
+        }
+
+        // Notify client warning is canceled
+        io.to(`user:${socket.data.userId}`).emit('bet:afk-warning-cancel', { roomId })
+
+        sendSystemMessage(roomId, io, `${socket.data.displayName} ist wieder da`)
+      }
     })
 
     socket.on('disconnect', async () => {
