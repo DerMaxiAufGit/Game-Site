@@ -67,7 +67,7 @@ class RoomManager {
       name: settings.name,
       hostId,
       hostName,
-      gameType: 'kniffel',
+      gameType: settings.gameType || 'kniffel',
       status: 'waiting',
       isPrivate: settings.isPrivate || false,
       maxPlayers: settings.maxPlayers || 6,
@@ -78,6 +78,9 @@ class RoomManager {
       minBet: settings.minBet || 0,
       maxBet: settings.maxBet || 0,
       payoutRatios: payoutRatios || [],
+      pokerSettings: settings.pokerSettings || null,
+      blackjackSettings: settings.blackjackSettings || null,
+      rouletteSettings: settings.rouletteSettings || null,
       players: [{ userId: hostId, displayName: hostName, isReady: false }],
       spectators: [],
       gameState: null,
@@ -363,7 +366,7 @@ async function autoPlay(roomId, io) {
         io.to(`user:${currentPlayer.userId}`).emit('bet:afk-warning', {
           roomId,
           gracePeriodSec,
-          message: `Du wirst in ${gracePeriodSec} Sekunden wegen Inaktivitaet entfernt. Dein Einsatz verfaellt.`
+          message: `Du wirst in ${gracePeriodSec} Sekunden wegen Inaktivität entfernt. Dein Einsatz verfällt.`
         })
 
         // Set timeout for actual kick
@@ -672,6 +675,25 @@ app.prepare().then(() => {
       }
     })
 
+    // Handle transfer notification to recipient
+    socket.on('wallet:transfer-complete', async ({ toUserId, amount }) => {
+      try {
+        if (!toUserId || !amount) return
+
+        // Look up recipient's new balance
+        const wallet = await getWalletWithUser(toUserId)
+
+        // Notify recipient with balance update + transfer info
+        emitBalanceUpdate(io, toUserId, wallet.balance, amount, `Transfer von ${socket.data.displayName}`)
+        io.to(`user:${toUserId}`).emit('wallet:transfer-received', {
+          fromName: socket.data.displayName,
+          amount,
+        })
+      } catch (error) {
+        console.error('wallet:transfer-complete error:', error.message)
+      }
+    })
+
     // Handle room list request
     socket.on('room:list', (callback) => {
       callback({ success: true, rooms: roomManager.getPublicRooms() })
@@ -720,7 +742,7 @@ app.prepare().then(() => {
           }
           if (wallet.balance < settings.betAmount) {
             roomManager.removeRoom(room.id)
-            return callback({ success: false, error: 'Nicht genug Guthaben fuer den Einsatz' })
+            return callback({ success: false, error: 'Nicht genug Guthaben für den Einsatz' })
           }
 
           await prisma.$transaction(async (tx) => {
@@ -775,6 +797,7 @@ app.prepare().then(() => {
       if (room.players.some(p => p.userId === socket.data.userId)) {
         socket.join(roomId)
         callback?.({ success: true, room, rejoined: true })
+        io.to(roomId).emit('room:update', room)
         return
       }
 
@@ -921,7 +944,7 @@ app.prepare().then(() => {
                       type: 'BET_REFUND',
                       amount: escrow.amount,
                       userId: socket.data.userId,
-                      description: `Einsatz zurueck: ${room.name}`
+                      description: `Einsatz zurück: ${room.name}`
                     }
                   })
 
@@ -940,7 +963,7 @@ app.prepare().then(() => {
                 })
 
                 // Emit balance update
-                emitBalanceUpdate(io, socket.data.userId, wallet.balance + escrow.amount, escrow.amount, `Einsatz zurueck: ${room.name}`)
+                emitBalanceUpdate(io, socket.data.userId, wallet.balance + escrow.amount, escrow.amount, `Einsatz zurück: ${room.name}`)
               } else if (escrow.status === 'LOCKED') {
                 // Game in progress: forfeit (no refund)
                 await prisma.$transaction(async (tx) => {
@@ -1101,6 +1124,10 @@ app.prepare().then(() => {
         callback?.({ error: 'No game' })
         return
       }
+      if (room.gameType !== 'kniffel') {
+        callback?.({ error: 'Invalid game type for this action' })
+        return
+      }
       const gs = room.gameState
 
       // Generate new dice via imported crypto-rng
@@ -1140,7 +1167,7 @@ app.prepare().then(() => {
       resetTurnTimer(roomId, io)
 
       io.to(roomId).emit('game:state-update', { state: result, roomId })
-      sendSystemMessage(roomId, io, `${currentPlayer.displayName} hat gewuerfelt`)
+      sendSystemMessage(roomId, io, `${currentPlayer.displayName} hat gewürfelt`)
       callback?.({ success: true, dice: result.dice })
     })
 
@@ -1149,6 +1176,10 @@ app.prepare().then(() => {
       const room = roomManager.getRoom(roomId)
       if (!room || !room.gameState) {
         callback?.({ error: 'No game' })
+        return
+      }
+      if (room.gameType !== 'kniffel') {
+        callback?.({ error: 'Invalid game type for this action' })
         return
       }
       const gs = room.gameState
@@ -1181,7 +1212,7 @@ app.prepare().then(() => {
       sendSystemMessage(
         roomId,
         io,
-        `${scoredPlayer.displayName} hat ${category} gewaehlt (${score} Punkte)`
+        `${scoredPlayer.displayName} hat ${category} gewählt (${score} Punkte)`
       )
 
       // Check if game ended
@@ -1337,18 +1368,44 @@ app.prepare().then(() => {
 
       room.players = gamePlayers
 
-      // Use imported createInitialState from state-machine.ts
+      // Create initial game state based on game type
       const playerData = gamePlayers.map(p => ({
         userId: p.userId,
         displayName: p.displayName
       }))
-      const settings = {
-        turnTimer: room.turnTimer,
-        afkThreshold: room.afkThreshold
+
+      if (room.gameType === 'kniffel') {
+        // Use imported createInitialState from state-machine.ts for Kniffel
+        const settings = {
+          turnTimer: room.turnTimer,
+          afkThreshold: room.afkThreshold
+        }
+        room.gameState = createInitialState(playerData, settings)
+        room.gameState.phase = 'rolling'
+        room.gameState.turnStartedAt = Date.now()
+      } else if (room.gameType === 'blackjack') {
+        // Placeholder state for Blackjack (will be replaced by Plan 04-03)
+        room.gameState = {
+          phase: 'betting',
+          gameType: 'blackjack',
+          players: playerData
+        }
+      } else if (room.gameType === 'roulette') {
+        // Placeholder state for Roulette (will be replaced by Plan 04-04)
+        room.gameState = {
+          phase: 'betting',
+          gameType: 'roulette',
+          players: playerData
+        }
+      } else if (room.gameType === 'poker') {
+        // Placeholder state for Poker (will be replaced by Plan 04-05)
+        room.gameState = {
+          phase: 'waiting',
+          gameType: 'poker',
+          players: playerData
+        }
       }
-      room.gameState = createInitialState(playerData, settings)
-      room.gameState.phase = 'rolling'
-      room.gameState.turnStartedAt = Date.now()
+
       room.status = 'playing'
 
       // Lock all PENDING escrows for bet rooms
@@ -1374,9 +1431,24 @@ app.prepare().then(() => {
       io.to(roomId).emit('game:state-update', { state: room.gameState, roomId })
       io.emit('room:list-update', roomManager.getPublicRooms())
 
-      // Start turn timer
-      startTurnTimer(roomId, io)
+      // Start turn timer (only for Kniffel for now)
+      if (room.gameType === 'kniffel') {
+        startTurnTimer(roomId, io)
+      }
       callback?.({ success: true })
+    })
+
+    // Placeholder handlers for new game types (will be implemented in later plans)
+    socket.on('game:blackjack-action', ({ roomId, action }, callback) => {
+      callback?.({ error: 'Blackjack not yet implemented (Plan 04-03)' })
+    })
+
+    socket.on('game:roulette-action', ({ roomId, action }, callback) => {
+      callback?.({ error: 'Roulette not yet implemented (Plan 04-04)' })
+    })
+
+    socket.on('game:poker-action', ({ roomId, action }, callback) => {
+      callback?.({ error: 'Poker not yet implemented (Plan 04-05)' })
     })
 
     // Handle game abort (host only)
@@ -1435,7 +1507,7 @@ app.prepare().then(() => {
         io.emit('room:list-update', roomManager.getPublicRooms())
       } else if (rv.votedNo.length > rv.total - rv.required) {
         io.to(roomId).emit('game:rematch-declined')
-        sendSystemMessage(roomId, io, 'Kein Rematch. Zurueck zur Lobby.')
+        sendSystemMessage(roomId, io, 'Kein Rematch. Zurück zur Lobby.')
       }
 
       callback?.({ success: true })
@@ -1493,14 +1565,14 @@ app.prepare().then(() => {
                       data: { balance: { increment: escrow.amount } }
                     })
                     await tx.transaction.create({
-                      data: { type: 'BET_REFUND', amount: escrow.amount, userId: socket.data.userId, description: `Einsatz zurueck: ${room.name}` }
+                      data: { type: 'BET_REFUND', amount: escrow.amount, userId: socket.data.userId, description: `Einsatz zurück: ${room.name}` }
                     })
                     await tx.betEscrow.update({
                       where: { id: escrow.id },
                       data: { status: 'RELEASED', releasedAt: new Date() }
                     })
                   }, { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 })
-                  emitBalanceUpdate(io, socket.data.userId, wallet.balance + escrow.amount, escrow.amount, `Einsatz zurueck: ${room.name}`)
+                  emitBalanceUpdate(io, socket.data.userId, wallet.balance + escrow.amount, escrow.amount, `Einsatz zurück: ${room.name}`)
                 } else if (escrow.status === 'LOCKED') {
                   // Mid-game: forfeit
                   await prisma.$transaction(async (tx) => {
