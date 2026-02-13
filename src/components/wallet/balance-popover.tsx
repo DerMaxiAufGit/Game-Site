@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
 import { useSocket } from '@/lib/socket/provider'
@@ -25,6 +25,19 @@ export function BalancePopover({ children }: BalancePopoverProps) {
   const { socket } = useSocket()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const openPopover = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+    setIsOpen(true)
+  }, [])
+
+  const closePopover = useCallback(() => {
+    closeTimeoutRef.current = setTimeout(() => setIsOpen(false), 150)
+  }, [])
 
   // Fetch transactions when popover opens
   useEffect(() => {
@@ -57,13 +70,16 @@ export function BalancePopover({ children }: BalancePopoverProps) {
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild onMouseEnter={openPopover} onMouseLeave={closePopover}>
         {children}
       </PopoverTrigger>
       <PopoverContent
         side="right"
         align="start"
         className="w-80 bg-zinc-800 border-zinc-700 p-0"
+        onMouseEnter={openPopover}
+        onMouseLeave={closePopover}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="p-4 border-b border-zinc-700">
           <h3 className="text-sm font-semibold text-white">Letzte Transaktionen</h3>

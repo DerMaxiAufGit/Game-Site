@@ -89,7 +89,7 @@ function emitBalanceUpdate(
  */
 const spinTimers = new Map<string, NodeJS.Timeout>(); // roomId -> timeout
 
-function startSpinTimer(
+export function startSpinTimer(
   roomId: string,
   io: Server,
   roomManager: RoomManager,
@@ -161,7 +161,7 @@ async function autoSpin(
 
 /**
  * Handle per-spin settlement for Roulette bet rooms
- * Unlike Kniffel (single payout at end), Roulette tracks chips across spins
+ * Debit already happened on bet placement; now credit winnings
  */
 async function handleRouletteSpinSettlement(
   room: any,
@@ -172,27 +172,52 @@ async function handleRouletteSpinSettlement(
   prisma: PrismaClient
 ) {
   if (!room.isBetRoom) {
-    // Free room: no settlements
     return;
   }
 
   try {
-    // Calculate payouts for this spin
     const playerPayouts: Array<{ userId: string; displayName: string; netResult: number }> = [];
 
-    for (const player of gameState.players) {
-      const payout = calculatePlayerPayout(player, winningNumber);
-      const totalBet = player.totalBetAmount;
-      const netResult = payout - totalBet;
+    await prisma.$transaction(
+      async (tx) => {
+        for (const player of gameState.players) {
+          const payout = calculatePlayerPayout(player, winningNumber);
+          const totalBet = player.totalBetAmount;
+          const netResult = payout - totalBet;
 
-      playerPayouts.push({
-        userId: player.userId,
-        displayName: player.displayName,
-        netResult,
-      });
-    }
+          playerPayouts.push({
+            userId: player.userId,
+            displayName: player.displayName,
+            netResult,
+          });
 
-    // Emit spin result with player payouts
+          // Credit payout (includes original bet back if won)
+          if (payout > 0) {
+            const wallet = await tx.wallet.update({
+              where: { userId: player.userId },
+              data: { balance: { increment: payout } },
+            });
+
+            await tx.transaction.create({
+              data: {
+                type: 'GAME_WIN',
+                amount: payout,
+                userId: player.userId,
+                description: `Roulette Gewinn (${winningNumber})`,
+              },
+            });
+
+            emitBalanceUpdate(io, player.userId, wallet.balance, payout, 'Roulette Gewinn');
+          }
+        }
+      },
+      {
+        isolationLevel: 'Serializable',
+        maxWait: 5000,
+        timeout: 10000,
+      }
+    );
+
     io.to(roomId).emit('roulette:spin-settlement', { playerPayouts });
 
     sendSystemMessage(
@@ -207,58 +232,6 @@ async function handleRouletteSpinSettlement(
 }
 
 /**
- * Handle game end settlement (convert remaining chips back to balance)
- */
-async function handleRouletteGameEnd(
-  room: any,
-  roomId: string,
-  gameState: RouletteGameState,
-  io: Server,
-  prisma: PrismaClient
-) {
-  if (!room.isBetRoom) {
-    return null;
-  }
-
-  try {
-    // Get locked escrows (original buy-ins)
-    const escrows = await prisma.betEscrow.findMany({
-      where: { roomId, status: 'LOCKED' },
-    });
-
-    // For each player, calculate remaining chips and convert to balance
-    await prisma.$transaction(
-      async (tx) => {
-        for (const escrow of escrows) {
-          // For Roulette, players keep their remaining chip count
-          // In a full implementation, we'd track chip counts in gameState
-          // For now, we'll just release the escrows as the game ends
-          // (Actual chip tracking would be added in a complete implementation)
-
-          await tx.betEscrow.update({
-            where: { id: escrow.id },
-            data: {
-              status: 'RELEASED',
-              releasedAt: new Date(),
-            },
-          });
-        }
-      },
-      {
-        isolationLevel: 'Serializable',
-        maxWait: 5000,
-        timeout: 10000,
-      }
-    );
-
-    return null;
-  } catch (error) {
-    console.error('Roulette game end error:', error);
-    return null;
-  }
-}
-
-/**
  * Register all Roulette Socket.IO handlers
  */
 export function registerRouletteHandlers(
@@ -268,7 +241,7 @@ export function registerRouletteHandlers(
   prisma: PrismaClient
 ) {
   /**
-   * Handle bet placement
+   * Handle bet placement — debits wallet for bet rooms
    */
   socket.on('roulette:place-bet', async (data: RoulettePlaceBetData, callback) => {
     const { roomId, betType, numbers, amount } = data;
@@ -291,7 +264,85 @@ export function registerRouletteHandlers(
       return;
     }
 
-    // Apply bet action
+    // For bet rooms: validate balance and debit wallet BEFORE applying state
+    if (room.isBetRoom) {
+      try {
+        const wallet = await prisma.wallet.findUnique({
+          where: { userId: socket.data.userId },
+        });
+
+        if (!wallet || wallet.balance < amount) {
+          callback?.({ success: false, error: 'Nicht genug Guthaben' });
+          return;
+        }
+
+        if (wallet.frozenAt !== null) {
+          callback?.({ success: false, error: 'Wallet ist eingefroren' });
+          return;
+        }
+
+        await prisma.$transaction(
+          async (tx) => {
+            // Re-check balance inside transaction for safety
+            const current = await tx.wallet.findUnique({
+              where: { userId: socket.data.userId },
+            });
+            if (!current || current.balance < amount) {
+              throw new Error('Insufficient balance');
+            }
+
+            await tx.wallet.update({
+              where: { userId: socket.data.userId },
+              data: { balance: { decrement: amount } },
+            });
+
+            await tx.transaction.create({
+              data: {
+                type: 'BET_PLACED',
+                amount,
+                userId: socket.data.userId,
+                description: 'Roulette Einsatz',
+              },
+            });
+          },
+          {
+            isolationLevel: 'Serializable',
+            maxWait: 5000,
+            timeout: 10000,
+          }
+        );
+
+        // Emit balance update
+        const updatedWallet = await prisma.wallet.findUnique({
+          where: { userId: socket.data.userId },
+        });
+        if (updatedWallet) {
+          emitBalanceUpdate(io, socket.data.userId, updatedWallet.balance, -amount, 'Roulette Einsatz');
+        }
+      } catch (error) {
+        console.error('Roulette bet debit error:', error);
+        callback?.({ success: false, error: 'Nicht genug Guthaben' });
+        return;
+      }
+    }
+
+    // Re-read gameState after awaits to avoid stale reference (another handler may have updated it)
+    let currentGameState = (room.gameState as RouletteGameState) || gameState;
+
+    // Auto-add player if they're not in the game state (late-join edge case)
+    if (!currentGameState.players.some((p) => p.userId === socket.data.userId)) {
+      const addResult = applyAction(currentGameState, {
+        type: 'ADD_PLAYER',
+        userId: socket.data.userId,
+        displayName: socket.data.displayName,
+      });
+      if (!(addResult instanceof Error)) {
+        currentGameState = addResult;
+        room.gameState = addResult;
+      }
+    }
+
+    // Apply bet action to state machine
     const bet: RouletteBet = {
       type: betType as any,
       numbers,
@@ -299,9 +350,39 @@ export function registerRouletteHandlers(
     };
 
     const action = { type: 'PLACE_BET' as const, userId: socket.data.userId, bet };
-    const result = applyAction(gameState, action);
+    const result = applyAction(currentGameState, action);
 
     if (result instanceof Error) {
+      // Refund the debit if state machine rejects the bet
+      if (room.isBetRoom) {
+        try {
+          await prisma.$transaction(
+            async (tx) => {
+              await tx.wallet.update({
+                where: { userId: socket.data.userId },
+                data: { balance: { increment: amount } },
+              });
+              await tx.transaction.create({
+                data: {
+                  type: 'BET_REFUND',
+                  amount,
+                  userId: socket.data.userId,
+                  description: 'Roulette Einsatz zurück (ungültig)',
+                },
+              });
+            },
+            { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }
+          );
+          const refundedWallet = await prisma.wallet.findUnique({
+            where: { userId: socket.data.userId },
+          });
+          if (refundedWallet) {
+            emitBalanceUpdate(io, socket.data.userId, refundedWallet.balance, amount, 'Einsatz zurück');
+          }
+        } catch (refundError) {
+          console.error('Roulette bet refund error:', refundError);
+        }
+      }
       callback?.({ success: false, error: result.message });
       return;
     }
@@ -315,7 +396,7 @@ export function registerRouletteHandlers(
   });
 
   /**
-   * Handle bet removal
+   * Handle bet removal — credits wallet for bet rooms
    */
   socket.on('roulette:remove-bet', async (data: RouletteRemoveBetData, callback) => {
     const { roomId, betIndex } = data;
@@ -338,6 +419,10 @@ export function registerRouletteHandlers(
       return;
     }
 
+    // Get the bet amount BEFORE applying state change (bet gets removed)
+    const player = gameState.players.find((p) => p.userId === socket.data.userId);
+    const removedBet = player?.bets[betIndex];
+
     // Apply remove bet action
     const action = { type: 'REMOVE_BET' as const, userId: socket.data.userId, betIndex };
     const result = applyAction(gameState, action);
@@ -348,6 +433,36 @@ export function registerRouletteHandlers(
     }
 
     room.gameState = result;
+
+    // For bet rooms: credit wallet with removed bet amount
+    if (room.isBetRoom && removedBet) {
+      try {
+        const wallet = await prisma.$transaction(
+          async (tx) => {
+            const updated = await tx.wallet.update({
+              where: { userId: socket.data.userId },
+              data: { balance: { increment: removedBet.amount } },
+            });
+
+            await tx.transaction.create({
+              data: {
+                type: 'BET_REFUND',
+                amount: removedBet.amount,
+                userId: socket.data.userId,
+                description: 'Roulette Einsatz zurück',
+              },
+            });
+
+            return updated;
+          },
+          { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }
+        );
+
+        emitBalanceUpdate(io, socket.data.userId, wallet.balance, removedBet.amount, 'Einsatz zurück');
+      } catch (error) {
+        console.error('Roulette bet refund error:', error);
+      }
+    }
 
     // Emit state update
     io.to(roomId).emit('game:state-update', { state: result, roomId });

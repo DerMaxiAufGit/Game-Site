@@ -60,16 +60,17 @@ describe('calculatePayouts', () => {
       expect(getTotalPayout(result)).toBe(1000)
     })
 
-    it('should handle 2-player game with unclaimed 3rd place prize', () => {
+    it('should redistribute unclaimed 3rd place prize in 2-player game', () => {
       const rankings: FinalRanking[] = [
         { position: 1, userIds: ['a'] },
         { position: 2, userIds: ['b'] },
       ]
       const result = calculatePayouts(500, rankings, standardRatios)
 
-      expect(result.get('a')).toBe(300)
-      expect(result.get('b')).toBe(150)
-      expect(getTotalPayout(result)).toBe(450) // 3rd place unclaimed
+      // Active: 60+30=90. P1: floor(500*60/90)=333, P2: floor(500*30/90)=166, leftover 1→P1
+      expect(result.get('a')).toBe(334)
+      expect(result.get('b')).toBe(166)
+      expect(getTotalPayout(result)).toBe(500) // full pot distributed
     })
   })
 
@@ -81,11 +82,14 @@ describe('calculatePayouts', () => {
       ]
       const result = calculatePayouts(1000, rankings, standardRatios)
 
-      // 1st place gets 600, split between 2 players = 300 each
-      expect(result.get('a')).toBe(300)
-      expect(result.get('b')).toBe(300)
-      expect(result.get('c')).toBe(100) // 3rd place
-      expect(getTotalPayout(result)).toBe(700)
+      // Active: 60+10=70 (position 2 unclaimed)
+      // P1: floor(1000*60/70)=857 split 2: base=428, remainder=1 → a=429, b=428
+      // P3: floor(1000*10/70)=142 → c=142
+      // Distributed: 999, leftover 1 → a
+      expect(result.get('a')).toBe(430)
+      expect(result.get('b')).toBe(428)
+      expect(result.get('c')).toBe(142)
+      expect(getTotalPayout(result)).toBe(1000)
     })
 
     it('should split prize evenly for 3-way tie for 1st place', () => {
@@ -94,11 +98,12 @@ describe('calculatePayouts', () => {
       ]
       const result = calculatePayouts(1000, rankings, standardRatios)
 
-      // 1st place gets 600, split between 3 players = 200 each
-      expect(result.get('a')).toBe(200)
-      expect(result.get('b')).toBe(200)
-      expect(result.get('c')).toBe(200)
-      expect(getTotalPayout(result)).toBe(600)
+      // Only position 1 active (60/60=100%). Prize=floor(1000*60/60)=1000
+      // Split 3: base=333, remainder=1 → a=334, b=333, c=333
+      expect(result.get('a')).toBe(334)
+      expect(result.get('b')).toBe(333)
+      expect(result.get('c')).toBe(333)
+      expect(getTotalPayout(result)).toBe(1000)
     })
 
     it('should handle odd remainder by giving extra chip to first tied player', () => {
@@ -107,10 +112,11 @@ describe('calculatePayouts', () => {
       ]
       const result = calculatePayouts(997, rankings, standardRatios)
 
-      // 1st place gets 598 (60% of 997), split between 3 = 199 each + 1 remainder
+      // Only position 1 active (60/60=100%). Prize=floor(997*60/60)=997
+      // Split 3: base=332, remainder=1 → a=333, b=332, c=332
       const payouts = [result.get('a')!, result.get('b')!, result.get('c')!]
-      expect(payouts.sort((a, b) => b - a)).toEqual([200, 199, 199])
-      expect(getTotalPayout(result)).toBe(598)
+      expect(payouts.sort((a, b) => b - a)).toEqual([333, 332, 332])
+      expect(getTotalPayout(result)).toBe(997)
     })
 
     it('should handle 2-way tie for 2nd place', () => {
@@ -120,11 +126,13 @@ describe('calculatePayouts', () => {
       ]
       const result = calculatePayouts(1000, rankings, standardRatios)
 
-      expect(result.get('a')).toBe(600)
-      // 2nd place gets 300, split between 2 = 150 each
-      expect(result.get('b')).toBe(150)
-      expect(result.get('c')).toBe(150)
-      expect(getTotalPayout(result)).toBe(900)
+      // Active: 60+30=90. P1: floor(1000*60/90)=666. P2: floor(1000*30/90)=333
+      // P2 split 2: base=166, remainder=1 → b=167, c=166
+      // Distributed: 666+167+166=999, leftover 1 → a
+      expect(result.get('a')).toBe(667)
+      expect(result.get('b')).toBe(167)
+      expect(result.get('c')).toBe(166)
+      expect(getTotalPayout(result)).toBe(1000)
     })
   })
 

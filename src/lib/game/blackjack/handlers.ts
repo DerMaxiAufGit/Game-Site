@@ -7,6 +7,7 @@ import type { Socket, Server } from 'socket.io';
 import type { PrismaClient } from '@prisma/client';
 import {
   applyBlackjackAction,
+  dealerStep,
   type BlackjackGameState,
   type BlackjackPlayer,
   type PlayerHand,
@@ -166,7 +167,7 @@ async function handleBlackjackSettlement(
       async (tx) => {
         for (const settlement of settlements) {
           if (settlement.winAmount > 0) {
-            await tx.wallet.update({
+            const wallet = await tx.wallet.update({
               where: { userId: settlement.userId },
               data: { balance: { increment: settlement.winAmount } },
             });
@@ -180,11 +181,11 @@ async function handleBlackjackSettlement(
               },
             });
 
-            // Emit balance update
+            // Emit balance update with actual new balance
             emitBalanceUpdate(
               io,
               settlement.userId,
-              0,
+              wallet.balance,
               settlement.winAmount,
               `${room.name} gewonnen`
             );
@@ -255,11 +256,112 @@ export function registerBlackjackHandlers(
       return;
     }
 
+    // For bet rooms: validate balance and debit wallet
+    if (room.isBetRoom) {
+      try {
+        const wallet = await prisma.wallet.findUnique({
+          where: { userId: socket.data.userId },
+        });
+
+        if (!wallet || wallet.balance < amount) {
+          callback?.({ success: false, error: 'Nicht genug Guthaben' });
+          return;
+        }
+
+        if (wallet.frozenAt !== null) {
+          callback?.({ success: false, error: 'Wallet ist eingefroren' });
+          return;
+        }
+
+        await prisma.$transaction(
+          async (tx) => {
+            const current = await tx.wallet.findUnique({
+              where: { userId: socket.data.userId },
+            });
+            if (!current || current.balance < amount) {
+              throw new Error('Insufficient balance');
+            }
+
+            await tx.wallet.update({
+              where: { userId: socket.data.userId },
+              data: { balance: { decrement: amount } },
+            });
+
+            await tx.transaction.create({
+              data: {
+                type: 'BET_PLACED',
+                amount,
+                userId: socket.data.userId,
+                description: 'Blackjack Einsatz',
+              },
+            });
+          },
+          { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }
+        );
+
+        const updatedWallet = await prisma.wallet.findUnique({
+          where: { userId: socket.data.userId },
+        });
+        if (updatedWallet) {
+          emitBalanceUpdate(io, socket.data.userId, updatedWallet.balance, -amount, 'Blackjack Einsatz');
+        }
+      } catch (error) {
+        console.error('Blackjack bet debit error:', error);
+        callback?.({ success: false, error: 'Nicht genug Guthaben' });
+        return;
+      }
+    }
+
+    // Re-read gameState after awaits to avoid stale reference (another handler may have updated it)
+    let currentGameState = (room.gameState as BlackjackGameState) || gameState;
+
+    // Auto-add player if they're not in the game state (late-join edge case)
+    if (!currentGameState.players.some((p) => p.userId === socket.data.userId)) {
+      const addResult = applyBlackjackAction(currentGameState, {
+        type: 'ADD_PLAYER',
+        payload: { userId: socket.data.userId, displayName: socket.data.displayName },
+      }, socket.data.userId);
+      if (!(addResult instanceof Error)) {
+        currentGameState = addResult;
+        room.gameState = addResult;
+      }
+    }
+
     // Apply bet action
     const action = { type: 'PLACE_BET' as const, payload: { amount } };
-    const result = applyBlackjackAction(gameState, action, socket.data.userId);
+    const result = applyBlackjackAction(currentGameState, action, socket.data.userId);
 
     if (result instanceof Error) {
+      // Refund if state machine rejects
+      if (room.isBetRoom) {
+        try {
+          await prisma.$transaction(
+            async (tx) => {
+              await tx.wallet.update({
+                where: { userId: socket.data.userId },
+                data: { balance: { increment: amount } },
+              });
+              await tx.transaction.create({
+                data: {
+                  type: 'BET_REFUND',
+                  amount,
+                  userId: socket.data.userId,
+                  description: 'Blackjack Einsatz zurück (ungültig)',
+                },
+              });
+            },
+            { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }
+          );
+          const refundedWallet = await prisma.wallet.findUnique({
+            where: { userId: socket.data.userId },
+          });
+          if (refundedWallet) {
+            emitBalanceUpdate(io, socket.data.userId, refundedWallet.balance, amount, 'Einsatz zurück');
+          }
+        } catch (refundError) {
+          console.error('Blackjack bet refund error:', refundError);
+        }
+      }
       callback?.({ success: false, error: result.message });
       return;
     }
@@ -330,6 +432,62 @@ export function registerBlackjackHandlers(
         return;
     }
 
+    // For bet rooms: debit additional costs for double/split/insurance
+    if (room.isBetRoom && (action === 'double' || action === 'split' || action === 'insurance')) {
+      const player = gameState.players.find((p: BlackjackPlayer) => p.userId === socket.data.userId);
+      if (!player) {
+        callback?.({ success: false, error: 'Player not found' });
+        return;
+      }
+
+      let extraCost = 0;
+      if (action === 'double') {
+        extraCost = player.hands[player.currentHandIndex]?.bet || 0;
+      } else if (action === 'split') {
+        extraCost = player.hands[player.currentHandIndex]?.bet || 0;
+      } else if (action === 'insurance') {
+        extraCost = insuranceAmount || 0;
+      }
+
+      if (extraCost > 0) {
+        try {
+          await prisma.$transaction(
+            async (tx) => {
+              const wallet = await tx.wallet.findUnique({
+                where: { userId: socket.data.userId },
+              });
+              if (!wallet || wallet.balance < extraCost) {
+                throw new Error('Insufficient balance');
+              }
+              await tx.wallet.update({
+                where: { userId: socket.data.userId },
+                data: { balance: { decrement: extraCost } },
+              });
+              await tx.transaction.create({
+                data: {
+                  type: 'BET_PLACED',
+                  amount: extraCost,
+                  userId: socket.data.userId,
+                  description: `Blackjack ${action === 'double' ? 'Double' : action === 'split' ? 'Split' : 'Insurance'}`,
+                },
+              });
+            },
+            { isolationLevel: 'Serializable', maxWait: 5000, timeout: 10000 }
+          );
+
+          const updatedWallet = await prisma.wallet.findUnique({
+            where: { userId: socket.data.userId },
+          });
+          if (updatedWallet) {
+            emitBalanceUpdate(io, socket.data.userId, updatedWallet.balance, -extraCost, `Blackjack ${action}`);
+          }
+        } catch (error) {
+          callback?.({ success: false, error: 'Nicht genug Guthaben' });
+          return;
+        }
+      }
+    }
+
     // Apply action
     const result = applyBlackjackAction(gameState, stateAction, socket.data.userId);
 
@@ -343,15 +501,52 @@ export function registerBlackjackHandlers(
     // Emit state update
     io.to(roomId).emit('game:state-update', { state: result, roomId });
 
-    // If dealer turn, emit reveal event
+    // If dealer turn started, animate dealer cards one by one
     if (result.phase === 'dealer_turn' && gameState.phase !== 'dealer_turn') {
-      setTimeout(() => {
-        io.to(roomId).emit('blackjack:dealer-reveal');
-      }, 500);
+      // Emit reveal of hole card first
+      io.to(roomId).emit('blackjack:dealer-reveal');
+
+      // Step through dealer hits with delays
+      const animateDealerTurn = async () => {
+        let currentState = room.gameState as BlackjackGameState;
+        const CARD_DELAY = 1200; // 1.2s between each card
+
+        // Wait for reveal animation
+        await new Promise(resolve => setTimeout(resolve, CARD_DELAY));
+
+        // Step through dealer draws
+        while (currentState.phase === 'dealer_turn') {
+          const stepped = dealerStep(currentState);
+          room.gameState = stepped;
+          io.to(roomId).emit('game:state-update', { state: stepped, roomId });
+
+          if (stepped.phase === 'settlement') {
+            // Dealer done — handle settlement
+            const payoutData = await handleBlackjackSettlement(
+              room,
+              roomId,
+              stepped,
+              io,
+              prisma
+            );
+
+            room.gameState = { ...stepped, phase: 'round_end' as any };
+            io.to(roomId).emit('game:state-update', { state: room.gameState, roomId });
+            io.to(roomId).emit('blackjack:round-settled', { payouts: payoutData });
+            break;
+          }
+
+          currentState = stepped;
+          // Wait between cards
+          await new Promise(resolve => setTimeout(resolve, CARD_DELAY));
+        }
+      };
+
+      animateDealerTurn().catch(err => console.error('Dealer animation error:', err));
     }
 
-    // Handle settlement
-    if (result.phase === 'settlement') {
+    // Handle immediate settlement (all players busted — no dealer turn needed)
+    if (result.phase === 'settlement' && gameState.phase !== 'dealer_turn') {
       const payoutData = await handleBlackjackSettlement(
         room,
         roomId,
@@ -360,14 +555,9 @@ export function registerBlackjackHandlers(
         prisma
       );
 
-      // Move to round_end
-      room.gameState = {
-        ...result,
-        phase: 'round_end',
-      };
-
+      room.gameState = { ...result, phase: 'round_end' as any };
       io.to(roomId).emit('game:state-update', { state: room.gameState, roomId });
-      io.to(roomId).emit('game:ended', { payouts: payoutData });
+      io.to(roomId).emit('blackjack:round-settled', { payouts: payoutData });
     }
 
     callback?.({ success: true });

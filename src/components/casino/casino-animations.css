@@ -15,6 +15,20 @@
   }
 }
 
+@keyframes card-slide-in {
+  0% {
+    transform: translateX(var(--deck-offset-x, -300px)) translateY(var(--deck-offset-y, -100px)) scale(0.8) rotate(-10deg);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0) translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
 @keyframes card-flip {
   0% {
     transform: rotateY(0deg);
@@ -64,6 +78,10 @@
 /* Utility classes */
 .animate-card-deal {
   animation: card-deal 0.6s ease-out forwards;
+}
+
+.animate-card-slide-in {
+  animation: card-slide-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .animate-card-flip {

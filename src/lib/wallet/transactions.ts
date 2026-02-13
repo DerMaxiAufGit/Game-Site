@@ -22,7 +22,7 @@ const TX_CONFIG = {
  * Cache-friendly, called often
  */
 export async function getSystemSettings(): Promise<SystemSettingsConfig> {
-  const settings = await prisma.systemSettings.findFirst()
+  const settings = await prisma.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
 
   if (!settings) {
     throw new Error('SystemSettings not initialized. Run: npx prisma db seed')
@@ -145,7 +145,7 @@ export async function creditBalance(
 
       if (!existingWallet) {
         // Lazy init: create wallet with starting balance
-        const settings = await tx.systemSettings.findFirst()
+        const settings = await tx.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
         const startingBalance = settings?.startingBalance ?? 1000
 
         await tx.wallet.create({
@@ -335,58 +335,54 @@ export async function getBalanceHistory(
     },
   })
 
-  // Get wallet to know current balance
+  // Get wallet to know current balance and creation date
   const wallet = await prisma.wallet.findUnique({
     where: { userId },
-    select: { balance: true },
+    select: { balance: true, createdAt: true },
   })
 
   if (!wallet) {
     return []
   }
 
-  // Calculate running balance by working backwards from current balance
-  const history: BalanceHistoryEntry[] = []
-  let runningBalance = wallet.balance
-
-  // Group by day and calculate balance at end of each day
-  const dateMap = new Map<string, number>()
-
-  // Work backwards from current balance
-  for (let i = transactions.length - 1; i >= 0; i--) {
-    const tx = transactions[i]
-    const dateStr = tx.createdAt.toISOString().split('T')[0]
-
-    // For debit types, we're going back in time, so add back
-    const isDebit =
-      tx.type === TransactionType.BET_PLACED ||
-      tx.type === TransactionType.TRANSFER_SENT ||
-      tx.type === TransactionType.ADMIN_DEBIT
-
-    if (isDebit) {
-      runningBalance += tx.amount
-    } else {
-      runningBalance -= tx.amount
-    }
-
-    dateMap.set(dateStr, runningBalance)
+  // Don't show data from before the wallet existed
+  const walletCreated = new Date(wallet.createdAt)
+  if (walletCreated > startDate) {
+    startDate.setTime(walletCreated.getTime())
   }
 
-  // Fill in all days (including days with no transactions)
+  const DEBIT_TYPES: string[] = [
+    TransactionType.BET_PLACED,
+    TransactionType.BET_FORFEIT,
+    TransactionType.TRANSFER_SENT,
+    TransactionType.ADMIN_DEBIT,
+  ]
+
+  // Group net change per day (positive = credits exceed debits)
+  const dailyChange = new Map<string, number>()
+  for (const tx of transactions) {
+    const dateStr = tx.createdAt.toISOString().split('T')[0]
+    const delta = DEBIT_TYPES.includes(tx.type) ? -tx.amount : tx.amount
+    dailyChange.set(dateStr, (dailyChange.get(dateStr) || 0) + delta)
+  }
+
+  // Sum all changes in the window to find balance before the window
+  let totalChange = 0
+  for (const delta of dailyChange.values()) {
+    totalChange += delta
+  }
+  const balanceBeforeWindow = wallet.balance - totalChange
+
+  // Walk forward day by day, accumulating changes
+  const history: BalanceHistoryEntry[] = []
   const currentDate = new Date(startDate)
   const today = new Date()
-  let lastBalance = dateMap.get(currentDate.toISOString().split('T')[0]) || wallet.balance
+  let runningBalance = balanceBeforeWindow
 
   while (currentDate <= today) {
     const dateStr = currentDate.toISOString().split('T')[0]
-    const balance = dateMap.get(dateStr) || lastBalance
-
-    history.push({
-      date: dateStr,
-      balance,
-    })
-
-    lastBalance = balance
+    runningBalance += dailyChange.get(dateStr) || 0
+    history.push({ date: dateStr, balance: runningBalance })
     currentDate.setDate(currentDate.getDate() + 1)
   }
 

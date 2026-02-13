@@ -118,6 +118,12 @@ export default function GameRoomPage() {
       routerRef.current.push('/')
     }
 
+    // Listen for game state updates (blackjack, roulette, poker handlers)
+    const handleGameStateUpdate = (data: { state: GameState; roomId: string }) => {
+      if (data.roomId !== roomId) return
+      setRoom(prev => prev ? { ...prev, gameState: data.state } : prev)
+    }
+
     // Listen for game end
     const handleGameEnded = (data: GameEndData) => {
       setGameEnd(data)
@@ -140,6 +146,7 @@ export default function GameRoomPage() {
     }
 
     socket.on('room:update', handleRoomUpdate)
+    socket.on('game:state-update', handleGameStateUpdate)
     socket.on('room:player-joined', handlePlayerJoined)
     socket.on('room:player-left', handlePlayerLeft)
     socket.on('room:error', handleError)
@@ -153,6 +160,7 @@ export default function GameRoomPage() {
     return () => {
       socket.emit('room:leave', { roomId })
       socket.off('room:update', handleRoomUpdate)
+      socket.off('game:state-update', handleGameStateUpdate)
       socket.off('room:player-joined', handlePlayerJoined)
       socket.off('room:player-left', handlePlayerLeft)
       socket.off('room:error', handleError)
@@ -249,7 +257,9 @@ export default function GameRoomPage() {
     const scores = gameEnd?.scores || room.gameState?.players.map(p => ({
       userId: p.userId,
       displayName: p.displayName,
-      total: Object.values(p.scoresheet).reduce((sum, val) => sum + (val ?? 0), 0)
+      total: p.scoresheet
+        ? Object.values(p.scoresheet).reduce((sum: number, val: any) => sum + (val ?? 0), 0)
+        : 0
     })) || []
 
     const sorted = [...scores].sort((a, b) => b.total - a.total)

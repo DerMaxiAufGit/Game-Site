@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useActionState } from 'react'
+import { useState, useEffect, useRef, useActionState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,9 +45,15 @@ export function TransferForm({
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [amount, setAmount] = useState('')
-  const { fetchBalance } = useSocket()
+  const { socket, fetchBalance } = useSocket()
 
   const [state, formAction, isPending] = useActionState(transferFunds, undefined)
+
+  // Stable refs for callbacks to avoid re-triggering the state effect
+  const onSuccessRef = useRef(onSuccess)
+  onSuccessRef.current = onSuccess
+  const fetchBalanceRef = useRef(fetchBalance)
+  fetchBalanceRef.current = fetchBalance
 
   // Debounced user search
   useEffect(() => {
@@ -79,6 +85,13 @@ export function TransferForm({
   useEffect(() => {
     if (state?.success) {
       toast.success('Transfer erfolgreich!')
+      // Notify recipient via socket
+      if (socket && selectedRecipient) {
+        socket.emit('wallet:transfer-complete', {
+          toUserId: selectedRecipient.id,
+          amount: Number(amount) || 0,
+        })
+      }
       // Reset form
       if (!prefillRecipientId) {
         setRecipientQuery('')
@@ -86,13 +99,13 @@ export function TransferForm({
       }
       setAmount('')
       // Update sidebar balance
-      fetchBalance()
+      fetchBalanceRef.current()
       // Call success callback (for dialog close)
-      onSuccess?.()
+      onSuccessRef.current?.()
     } else if (state?.error) {
       toast.error(state.error)
     }
-  }, [state, prefillRecipientId, fetchBalance, onSuccess])
+  }, [state, prefillRecipientId])
 
   const handleSelectRecipient = (user: User) => {
     setSelectedRecipient(user)

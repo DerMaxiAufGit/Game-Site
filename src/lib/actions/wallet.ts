@@ -168,7 +168,7 @@ export async function transferFunds(
       if (!senderWallet) throw new Error('Wallet nicht gefunden')
       if (senderWallet.frozenAt) throw new Error('Dein Wallet ist gesperrt')
       if (senderWallet.balance < amount) {
-        throw new Error(`Nicht genug Guthaben. Verfuegbar: ${senderWallet.balance}`)
+        throw new Error(`Nicht genug Guthaben. Verfügbar: ${senderWallet.balance}`)
       }
 
       // 2. Debit sender
@@ -190,7 +190,7 @@ export async function transferFunds(
       // 3. Ensure recipient wallet exists (lazy init)
       let recipientWallet = await tx.wallet.findUnique({ where: { userId: toUserId } })
       if (!recipientWallet) {
-        const systemSettings = await tx.systemSettings.findFirst()
+        const systemSettings = await tx.systemSettings.findFirst({ orderBy: { updatedAt: 'desc' } })
         const startingBalance = systemSettings?.startingBalance ?? 1000
         recipientWallet = await tx.wallet.create({
           data: { userId: toUserId, balance: startingBalance },

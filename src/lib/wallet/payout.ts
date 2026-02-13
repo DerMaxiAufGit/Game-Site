@@ -66,15 +66,28 @@ export function calculatePayouts(
   // Create a map of position to ratio
   const ratioMap = new Map(ratios.map((r) => [r.position, r.percentage]))
 
-  // Calculate payout for each ranking
-  for (const ranking of rankings) {
-    const ratio = ratioMap.get(ranking.position)
+  // Determine which positions are filled and sum their percentages
+  const filledPositions = rankings.filter(r => ratioMap.has(r.position))
+  const activePercentageSum = filledPositions.reduce(
+    (sum, r) => sum + (ratioMap.get(r.position) ?? 0), 0
+  )
 
-    // Skip if no ratio defined for this position
+  // If no active percentages, distribute nothing
+  if (activePercentageSum === 0) return payouts
+
+  // Calculate payout for each ranking, rescaling percentages so filled
+  // positions absorb any unclaimed share (e.g. no 3rd place in a 2-player game)
+  let distributed = 0
+  const sortedFilledPositions = [...filledPositions].sort(
+    (a, b) => a.position - b.position
+  )
+
+  for (const ranking of sortedFilledPositions) {
+    const ratio = ratioMap.get(ranking.position)
     if (ratio === undefined) continue
 
-    // Calculate prize for this position
-    const positionPrize = Math.floor((totalPot * ratio) / 100)
+    // Rescale: this position's share of the total active percentage
+    const positionPrize = Math.floor((totalPot * ratio) / activePercentageSum)
 
     // Split evenly among tied players
     const numPlayers = ranking.userIds.length
@@ -86,7 +99,15 @@ export function calculatePayouts(
       // Give remainder to first player
       const amount = index === 0 ? baseAmount + remainder : baseAmount
       payouts.set(userId, amount)
+      distributed += amount
     })
+  }
+
+  // Assign any leftover coins from rounding to 1st place
+  const leftover = totalPot - distributed
+  if (leftover > 0 && sortedFilledPositions.length > 0) {
+    const firstPlaceUserId = sortedFilledPositions[0].userIds[0]
+    payouts.set(firstPlaceUserId, (payouts.get(firstPlaceUserId) ?? 0) + leftover)
   }
 
   return payouts

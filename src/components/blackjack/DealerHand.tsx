@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { Card } from '@/components/casino/Card';
 import type { Card as CardType } from '@/lib/game/cards/types';
 import { getBestValue } from '@/lib/game/blackjack/engine-wrapper';
@@ -16,24 +17,40 @@ export function DealerHand({ cards, hidden, handValue, phase }: DealerHandProps)
   const displayValue = hidden ? '?' : getBestValue(cards);
   const isBusted = displayValue !== '?' && displayValue > 21;
   const isDealerTurn = phase === 'dealer_turn';
+  const prevCountRef = useRef(cards.length);
+
+  useEffect(() => {
+    prevCountRef.current = cards.length;
+  }, [cards.length]);
+
+  const prevCount = prevCountRef.current;
 
   return (
     <div className="flex flex-col items-center space-y-3">
       {/* Cards */}
       <div className="flex gap-2">
-        {cards.map((card, index) => (
-          <Card
-            key={index}
-            rank={card.rank}
-            suit={card.suit}
-            faceDown={hidden && index === 0}
-            size="md"
-            className={cn(
-              'transition-all duration-300',
-              !hidden && 'animate-in fade-in-0 slide-in-from-top-4'
-            )}
-          />
-        ))}
+        {cards.map((card, index) => {
+          const isNew = index >= prevCount;
+
+          return (
+            <Card
+              key={`${card.rank}-${card.suit}-${index}`}
+              rank={card.rank}
+              suit={card.suit}
+              faceDown={hidden && index === 0}
+              size="md"
+              className={cn(
+                'transition-all duration-300',
+                isNew && 'animate-card-slide-in'
+              )}
+              style={isNew ? {
+                '--deck-offset-x': '-300px',
+                '--deck-offset-y': '0px',
+                animationDelay: `${(index - prevCount) * 150}ms`,
+              } as React.CSSProperties : undefined}
+            />
+          );
+        })}
       </div>
 
       {/* Hand Value */}

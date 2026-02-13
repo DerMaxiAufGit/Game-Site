@@ -5,12 +5,10 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Seeding database...')
 
-  // Create or update SystemSettings (only one row should exist)
-  const systemSettings = await prisma.systemSettings.upsert({
-    where: { id: 'system-config' },
-    update: {},
-    create: {
-      id: 'system-config',
+  // Only create SystemSettings if none exist (don't overwrite admin changes)
+  const existing = await prisma.systemSettings.findFirst()
+  const systemSettings = existing ?? await prisma.systemSettings.create({
+    data: {
       currencyName: 'Chips',
       startingBalance: 1000,
       dailyAllowanceBase: 100,

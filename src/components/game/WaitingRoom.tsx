@@ -6,7 +6,8 @@ import type { Socket } from 'socket.io-client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Check, X, Copy, Crown, Send, Coins } from 'lucide-react'
+import { Check, X, Copy, Crown, Send, Coins, LogOut } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import type { GameState } from '@/types/game'
 import { TransferDialog } from '@/components/wallet/transfer-dialog'
 
@@ -15,6 +16,7 @@ interface RoomData {
   name: string
   hostId: string
   hostName: string
+  gameType?: string
   status: 'waiting' | 'playing' | 'ended'
   isPrivate: boolean
   maxPlayers: number
@@ -35,15 +37,20 @@ interface WaitingRoomProps {
 
 export function WaitingRoom({ room, currentUserId, socket }: WaitingRoomProps) {
   const t = useTranslations()
+  const router = useRouter()
   const [copied, setCopied] = useState(false)
 
   const isHost = currentUserId === room.hostId
   const players = room.players || []
   const spectators = room.spectators || []
 
+  // House games (blackjack, roulette) can be played solo
+  const isHouseGame = room.gameType === 'blackjack' || room.gameType === 'roulette'
+  const minPlayers = isHouseGame ? 1 : 2
+
   // Calculate ready status
   const readyCount = players.filter(p => p.isReady).length
-  const allReady = players.length >= 2 && readyCount === players.length
+  const allReady = players.length >= minPlayers && readyCount === players.length
   const currentPlayer = players.find(p => p.userId === currentUserId)
   const isReady = currentPlayer?.isReady || false
 
@@ -63,6 +70,11 @@ export function WaitingRoom({ room, currentUserId, socket }: WaitingRoomProps) {
       roomId: room.id,
       force: true
     })
+  }
+
+  const handleLeave = () => {
+    socket.emit('room:leave', { roomId: room.id })
+    router.push('/')
   }
 
   const handleKickPlayer = (userId: string) => {
@@ -242,20 +254,33 @@ export function WaitingRoom({ room, currentUserId, socket }: WaitingRoomProps) {
 
         {/* Actions */}
         <div className="flex flex-col gap-3">
-          {/* Ready Button (for all players) */}
+          {/* Ready / Leave Buttons */}
           {currentPlayer && (
-            <Button
-              onClick={handleToggleReady}
-              variant={isReady ? 'outline' : 'default'}
-              size="lg"
-              className={`w-full ${
-                isReady
-                  ? 'border-green-600 text-green-600 hover:bg-green-600/10'
-                  : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              {isReady ? t('room.notReady') : t('room.ready')}
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleToggleReady}
+                variant={isReady ? 'outline' : 'default'}
+                size="lg"
+                className={`flex-1 ${
+                  isReady
+                    ? 'border-green-600 text-green-600 hover:bg-green-600/10'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
+              >
+                {isReady ? t('room.notReady') : t('room.ready')}
+              </Button>
+              {!isReady && (
+                <Button
+                  onClick={handleLeave}
+                  variant="outline"
+                  size="lg"
+                  className="border-red-600 text-red-600 hover:bg-red-600/10"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  {t('room.leave')}
+                </Button>
+              )}
+            </div>
           )}
 
           {/* Host Controls */}
@@ -278,7 +303,7 @@ export function WaitingRoom({ room, currentUserId, socket }: WaitingRoomProps) {
                 </Button>
                 <Button
                   onClick={handleForceStart}
-                  disabled={players.length < 2}
+                  disabled={players.length < minPlayers}
                   variant="outline"
                   size="sm"
                   className="w-full border-yellow-600 text-yellow-600 hover:bg-yellow-600/10"

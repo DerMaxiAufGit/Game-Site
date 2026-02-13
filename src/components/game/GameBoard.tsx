@@ -13,6 +13,7 @@ import { GameChat } from './GameChat'
 import { SpectatorBanner } from './SpectatorBanner'
 import { PotDisplay } from '@/components/betting/pot-display'
 import { AfkWarning } from '@/components/betting/afk-warning'
+import { GameBalance } from '@/components/wallet/game-balance'
 import { LogOut, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -149,7 +150,6 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket, is
               currentPlayerIndex={localGameState.currentPlayerIndex}
               currentUserId={currentUserId}
               spectatorCount={localGameState.spectators.length}
-              gamePhase={localGameState.phase}
             />
           </div>
           {isBetRoom && totalPot > 0 && (
@@ -157,6 +157,7 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket, is
               <PotDisplay totalPot={totalPot} currencyName="Chips" />
             </div>
           )}
+          <GameBalance />
           <div className="flex gap-2 shrink-0">
             {isHost && (
               confirmAbort ? (
