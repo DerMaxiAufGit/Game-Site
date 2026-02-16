@@ -43,7 +43,7 @@ export interface PlayerHand {
 
 export interface DealerHand {
   cards: Card[];
-  hidden: boolean; // First card face down until dealer turn
+  hidden: boolean; // Second card (hole card) face down until dealer turn
 }
 
 export interface BlackjackPlayer {

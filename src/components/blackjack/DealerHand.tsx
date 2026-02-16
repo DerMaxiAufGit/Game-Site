@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Card } from '@/components/casino/Card';
 import type { Card as CardType } from '@/lib/game/cards/types';
 import { getBestValue } from '@/lib/game/blackjack/engine-wrapper';
@@ -14,10 +14,36 @@ interface DealerHandProps {
 }
 
 export function DealerHand({ cards, hidden, handValue, phase }: DealerHandProps) {
-  const displayValue = hidden ? '?' : getBestValue(cards);
+  const [localHidden, setLocalHidden] = useState(hidden);
+  const [isInitialRender, setIsInitialRender] = useState(true);
+  const displayValue = localHidden ? '?' : getBestValue(cards);
   const isBusted = displayValue !== '?' && displayValue > 21;
   const isDealerTurn = phase === 'dealer_turn';
   const prevCountRef = useRef(cards.length);
+  const prevHiddenRef = useRef(hidden);
+
+  // Mark that initial render is complete
+  useEffect(() => {
+    setIsInitialRender(false);
+  }, []);
+
+  // Handle hidden state changes with a small delay to ensure smooth flip animation
+  useEffect(() => {
+    if (hidden !== prevHiddenRef.current) {
+      prevHiddenRef.current = hidden;
+
+      if (!hidden) {
+        // When revealing, add a small delay to ensure state is stable
+        const timer = setTimeout(() => {
+          setLocalHidden(false);
+        }, 50);
+        return () => clearTimeout(timer);
+      } else {
+        // When hiding, update immediately
+        setLocalHidden(true);
+      }
+    }
+  }, [hidden]);
 
   useEffect(() => {
     prevCountRef.current = cards.length;
@@ -31,24 +57,36 @@ export function DealerHand({ cards, hidden, handValue, phase }: DealerHandProps)
       <div className="flex gap-2">
         {cards.map((card, index) => {
           const isNew = index >= prevCount;
+          const isSecondCard = index === 1;
+          const shouldBeFaceDown = localHidden && isSecondCard;
+
+          // Disable flip transition for hole card during dealing to prevent it from flashing face-up
+          // Keep transition disabled while hidden is true to prevent any flashing
+          const disableFlipTransition = shouldBeFaceDown;
 
           return (
-            <Card
+            <div
               key={`${card.rank}-${card.suit}-${index}`}
-              rank={card.rank}
-              suit={card.suit}
-              faceDown={hidden && index === 0}
-              size="md"
-              className={cn(
-                'transition-all duration-300',
-                isNew && 'animate-card-slide-in'
-              )}
-              style={isNew ? {
-                '--deck-offset-x': '-300px',
-                '--deck-offset-y': '0px',
-                animationDelay: `${(index - prevCount) * 150}ms`,
-              } as React.CSSProperties : undefined}
-            />
+              className={cn(isNew && 'animate-card-slide-in')}
+              style={{
+                ...(isNew ? {
+                  '--deck-offset-x': '-300px',
+                  '--deck-offset-y': '0px',
+                  animationDelay: `${(index - prevCount) * 150}ms`,
+                } : {})
+              } as React.CSSProperties}
+            >
+              <Card
+                rank={card.rank}
+                suit={card.suit}
+                faceDown={shouldBeFaceDown}
+                size="md"
+                className={disableFlipTransition && '!transition-none'}
+                style={{
+                  ...(disableFlipTransition ? { transitionDuration: '0s !important' } : {})
+                }}
+              />
+            </div>
           );
         })}
       </div>

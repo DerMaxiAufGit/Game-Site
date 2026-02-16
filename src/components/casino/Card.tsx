@@ -37,8 +37,12 @@ export function Card({ rank, suit, faceDown = false, isDealing = false, classNam
     >
       {/* Card Back */}
       <div
-        className="absolute inset-0 backface-hidden rotate-y-180 rounded-lg overflow-hidden"
-        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+        className="absolute inset-0 backface-hidden rounded-lg overflow-hidden"
+        style={{
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
       >
         <svg viewBox="0 0 60 84" className="w-full h-full">
           <rect width="60" height="84" fill="#1e3a8a" rx="4" />
@@ -53,11 +57,15 @@ export function Card({ rank, suit, faceDown = false, isDealing = false, classNam
 
       {/* Card Face */}
       <div
-        className="absolute inset-0 backface-hidden bg-white rounded-lg shadow-md border border-gray-200 flex flex-col p-1"
-        style={{ backfaceVisibility: 'hidden' }}
+        className="absolute inset-0 backface-hidden bg-white rounded-lg shadow-md border border-gray-200 flex flex-col overflow-hidden"
+        style={{
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(0deg)',
+          WebkitBackfaceVisibility: 'hidden'
+        }}
       >
         {/* Top left corner */}
-        <div className={cn('text-left font-bold leading-none', textColor, size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base')}>
+        <div className={cn('text-left font-bold leading-none px-1.5 pt-1.5', textColor, size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base')}>
           <div>{rank}</div>
           <div>{symbol}</div>
         </div>
@@ -68,7 +76,7 @@ export function Card({ rank, suit, faceDown = false, isDealing = false, classNam
         </div>
 
         {/* Bottom right corner (rotated) */}
-        <div className={cn('text-right font-bold leading-none rotate-180', textColor, size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base')}>
+        <div className={cn('text-right font-bold leading-none rotate-180 px-1.5 pb-1.5', textColor, size === 'sm' ? 'text-xs' : size === 'md' ? 'text-sm' : 'text-base')}>
           <div>{rank}</div>
           <div>{symbol}</div>
         </div>
