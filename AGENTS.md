@@ -31,4 +31,4 @@
 - Link related issues if applicable.
 
 ## Configuration Notes
-- Local environment files live in `.env.local` or `.env.*.local` and are ignored by git.
+- Local environment files live in `.env` with optional `.env.local` overrides and are ignored by git.

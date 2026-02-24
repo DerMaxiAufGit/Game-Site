@@ -12,7 +12,8 @@ npm install
 ```
 
 3. Create local env file:
-- Copy `.env.example` to `.env.local`
+- Copy `.env.example` to `.env`
+- (Optional) Create `.env.local` for machine-specific overrides
 - Set at least:
   - `DATABASE_URL`
   - `SESSION_SECRET`
@@ -42,4 +43,3 @@ npm run dev
 rmdir /s /q .next
 npm run dev
 ```
-

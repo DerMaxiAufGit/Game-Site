@@ -23,7 +23,7 @@ Create a root `README.md` that guides release users through production setup on 
   - Prerequisites (Linux server with Node.js + npm, PostgreSQL)
   - Download/unzip release
   - Install deps (`npm install`)
-  - Configure env (`.env.example` -> `.env.local`)
+  - Configure env (`.env.example` -> `.env`, use `.env.local` for overrides)
   - Prisma migrate/seed (`npx prisma migrate deploy`, `npx prisma db seed`)
   - Build (`npm run build`)
   - Start (`npm run start`)
