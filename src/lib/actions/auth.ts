@@ -123,8 +123,9 @@ export async function login(
 
     // Check if user is banned
     if (user.bannedAt) {
+      console.warn('Login blocked for banned user', { userId: user.id, email: user.email })
       return {
-        message: 'accountBanned',
+        message: 'invalidCredentials',
       }
     }
 
