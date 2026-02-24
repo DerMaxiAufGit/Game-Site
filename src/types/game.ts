@@ -1,6 +1,51 @@
 // Game types
 export type GameType = 'kniffel' | 'blackjack' | 'roulette' | 'poker'
 export type KniffelMode = 'classic' | 'team2v2' | 'team3v3'
+export type KniffelPreset =
+  | 'classic'
+  | 'triple'
+  | 'draft'
+  | 'duel'
+  | 'daily'
+  | 'ladder'
+  | 'roguelite'
+
+export interface KniffelRuleset {
+  preset: KniffelPreset
+  allowScratch: boolean
+  strictStraights: boolean
+  fullHouseUsesSum: boolean
+  maxRolls: number
+  categoryRandomizer: {
+    enabled: boolean
+    disabledCategories: ScoreCategory[]
+    specialCategories: ScoreCategory[]
+  }
+  speedMode: {
+    enabled: boolean
+    autoScore: boolean
+  }
+}
+
+export interface MatchState {
+  mode?: 'duel' | 'draft'
+  round: number
+  totalRounds?: number
+  winsByUserId?: Record<string, number>
+  activeCategories?: ScoreCategory[]
+}
+
+export interface ModifiersState {
+  jokersByUserId?: Record<string, number>
+  perksByUserId?: Record<string, string[]>
+  cursesByUserId?: Record<string, string[]>
+  boss?: {
+    id: string
+    turnsRemaining: number
+    objective: string
+    status: 'active' | 'success' | 'fail'
+  }
+}
 
 // Dice types
 export type DiceValue = 1 | 2 | 3 | 4 | 5 | 6
@@ -48,6 +93,10 @@ export interface PlayerState {
 export interface GameState {
   phase: GamePhase
   kniffelMode?: KniffelMode
+  ruleset?: KniffelRuleset
+  matchState?: MatchState
+  modifiers?: ModifiersState
+  rulesVersion?: number
   teams?: TeamInfo[]
   players: PlayerState[]
   spectators: string[] // userIds
@@ -98,6 +147,8 @@ export interface RoomSettings {
   name: string
   gameType: GameType
   kniffelMode?: KniffelMode
+  kniffelPreset?: KniffelPreset
+  kniffelRuleset?: Partial<KniffelRuleset>
   maxPlayers: number // 2-6 for Kniffel, 1-7 for Blackjack, 1-10 for Roulette, 2-9 for Poker
   isPrivate: boolean
   turnTimer: number // 30, 60, or 90
