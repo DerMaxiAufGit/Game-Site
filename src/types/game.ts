@@ -77,7 +77,7 @@ export type DiceValues = [DiceValue, DiceValue, DiceValue, DiceValue, DiceValue]
 export type KeptDice = boolean[] // which dice are kept (true = kept)
 
 // Game phases - state machine states
-export type GamePhase = 'waiting' | 'rolling' | 'paused' | 'scoring' | 'ended'
+export type GamePhase = 'waiting' | 'rolling' | 'draft_claim' | 'paused' | 'scoring' | 'ended'
 
 // Kniffel scoring categories
 export type ScoreCategory =

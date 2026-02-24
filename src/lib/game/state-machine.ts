@@ -276,11 +276,15 @@ function handleRollDice(
     }
   }
 
+  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+  const nextPhase = ruleset.draftEnabled ? 'draft_claim' : state.phase
+
   return {
     ...state,
     dice: resultDice,
     keptDice: [...keptDice],
-    rollsRemaining: state.rollsRemaining - 1
+    rollsRemaining: state.rollsRemaining - 1,
+    phase: nextPhase
   }
 }
 
@@ -292,7 +296,7 @@ function handleChooseCategory(
   columnIndex: number | undefined
 ): GameState | Error {
   // Must be in rolling phase
-  if (state.phase !== 'rolling') {
+  if (state.phase !== 'rolling' && state.phase !== 'draft_claim') {
     return new Error('Not in rolling phase')
   }
 
@@ -382,7 +386,8 @@ function handleChooseCategory(
 
   const newState: GameState = {
     ...state,
-    players: newPlayers
+    players: newPlayers,
+    phase: ruleset.draftEnabled ? 'rolling' : state.phase
   }
 
   // Advance turn
