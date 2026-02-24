@@ -63,6 +63,34 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
   const [disabledCategories, setDisabledCategories] = useState<ScoreCategory[]>([])
   const [specialCategories, setSpecialCategories] = useState<ScoreCategory[]>([])
 
+  const tooltipCopy = {
+    gameType: 'Wählt das Spiel. Casino-Spiele sind immer Echtgeld-Runden.',
+    roomName: 'Name des Raums (3–30 Zeichen).',
+    maxPlayers: 'Maximale Spielerzahl für den Raum.',
+    kniffelPreset: 'Voreinstellungen für Regelpakete (nur Classic verfügbar).',
+    kniffelMode: 'Der Spielmodus bestimmt die Teamaufteilung.',
+    allowScratch: 'Ein Feld darf als 0 gewertet werden.',
+    strictStraights: 'Straßen zählen nur mit exakten Sequenzen.',
+    fullHouseSum: 'Full House zählt als Augensumme statt Fixwert.',
+    maxRolls: 'Maximale Würfe pro Zug (4 aktiviert Risk Roll).',
+    speedMode: 'Wenn aktiviert, wird bei Timeout automatisch gewertet.',
+    draftMode: 'Spieler wählen Kategorien aus einem Draft-Pool.',
+    duelMode: 'Direkte Duelle mit kleinerem Kategorienpool.',
+    categoryRandomizer: 'Aktiviert zufällige De-/Aktivierung von Kategorien.',
+    disabledCategories: 'Kategorien, die im Match nicht wählbar sind.',
+    specialCategories: 'Zusätzliche Kategorien, die ins Spiel kommen.',
+    turnTimer: 'Zeitlimit pro Zug in Sekunden.',
+    afkThreshold: 'Züge bis ein Spieler als AFK gilt.',
+    spinTimer: 'Zeit bis zum Roulette-Spin.',
+    startingBlinds: 'Start-Blinds für Poker.',
+    visibility: 'Nur mit Einladungslink beitretbar.',
+    betType: 'Kostenlos oder Einsatzrunde (nur Kniffel).',
+    betAmount: 'Einsatz pro Spieler (zwischen Min/Max).',
+    minBet: 'Kleinster erlaubter Einsatz.',
+    maxBet: 'Größter erlaubter Einsatz.',
+    payoutRatios: 'Auszahlungsanteile müssen 100% ergeben.'
+  }
+
   const isCasinoGame = CASINO_GAMES.includes(gameType)
   const isFixedTeamSize = gameType === 'kniffel' && (kniffelMode === 'team2v2' || kniffelMode === 'team3v3')
   const baseCategoryOptions: ScoreCategory[] = [
@@ -256,104 +284,130 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
             </DialogDescription>
           </DialogHeader>
 
+          <TooltipProvider>
           <div className="space-y-4 py-4">
             {/* Game Type Selector - FIRST FIELD */}
-            <div className="space-y-2">
-              <Label htmlFor="gameType" className="text-white">
-                Spielart
-              </Label>
-              <Select value={gameType} onValueChange={(val) => setGameType(val as GameType)}>
-                <SelectTrigger id="gameType" className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="kniffel">🎲 Kniffel</SelectItem>
-                  <SelectItem value="blackjack">🃏 Blackjack</SelectItem>
-                  <SelectItem value="roulette">🎰 Roulette</SelectItem>
-                  <SelectItem value="poker" disabled>♠ Poker (Coming Soon)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="space-y-2">
+                  <Label htmlFor="gameType" className="text-white">
+                    Spielart
+                  </Label>
+                  <Select value={gameType} onValueChange={(val) => setGameType(val as GameType)}>
+                    <SelectTrigger id="gameType" className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="kniffel">🎲 Kniffel</SelectItem>
+                      <SelectItem value="blackjack">🃏 Blackjack</SelectItem>
+                      <SelectItem value="roulette">🎰 Roulette</SelectItem>
+                      <SelectItem value="poker" disabled>♠ Poker (Coming Soon)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{tooltipCopy.gameType}</TooltipContent>
+            </Tooltip>
 
             {/* Room Name */}
-            <div className="space-y-2">
-              <Label htmlFor="roomName" className="text-white">
-                {t('room.roomName')}
-              </Label>
-              <Input
-                id="roomName"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                placeholder="Mein Spielraum"
-                required
-                minLength={3}
-                maxLength={30}
-                className="bg-zinc-800 border-zinc-700 text-white"
-              />
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="space-y-2">
+                  <Label htmlFor="roomName" className="text-white">
+                    {t('room.roomName')}
+                  </Label>
+                  <Input
+                    id="roomName"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    placeholder="Mein Spielraum"
+                    required
+                    minLength={3}
+                    maxLength={30}
+                    className="bg-zinc-800 border-zinc-700 text-white"
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{tooltipCopy.roomName}</TooltipContent>
+            </Tooltip>
 
             {/* Max Players */}
-            <div className="space-y-2">
-              <Label htmlFor="maxPlayers" className="text-white">
-                {t('room.maxPlayers')}
-              </Label>
-              <Select value={maxPlayers} onValueChange={setMaxPlayers} disabled={isFixedTeamSize}>
-                <SelectTrigger id="maxPlayers" className="bg-zinc-800 border-zinc-700 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {getMaxPlayerOptions().map(num => (
-                    <SelectItem key={num} value={num.toString()}>
-                      {num} Spieler
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="space-y-2">
+                  <Label htmlFor="maxPlayers" className="text-white">
+                    {t('room.maxPlayers')}
+                  </Label>
+                  <Select value={maxPlayers} onValueChange={setMaxPlayers} disabled={isFixedTeamSize}>
+                    <SelectTrigger id="maxPlayers" className="bg-zinc-800 border-zinc-700 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getMaxPlayerOptions().map(num => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} Spieler
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{tooltipCopy.maxPlayers}</TooltipContent>
+            </Tooltip>
 
             {/* Game-specific settings */}
             {gameType === 'kniffel' && (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="kniffelPreset" className="text-white">
-                    Preset
-                  </Label>
-                  <Select value={kniffelPreset} onValueChange={(val) => setKniffelPreset(val as KniffelPreset)}>
-                    <SelectTrigger id="kniffelPreset" className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="classic">Classic</SelectItem>
-                      <SelectItem value="triple" disabled>Triple (Coming Soon)</SelectItem>
-                      <SelectItem value="draft" disabled>Draft (Coming Soon)</SelectItem>
-                      <SelectItem value="duel" disabled>Duel (Coming Soon)</SelectItem>
-                      <SelectItem value="daily" disabled>Daily (Coming Soon)</SelectItem>
-                      <SelectItem value="ladder" disabled>Ladder (Coming Soon)</SelectItem>
-                      <SelectItem value="roguelite" disabled>Roguelite (Coming Soon)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-2">
+                      <Label htmlFor="kniffelPreset" className="text-white">
+                        Preset
+                      </Label>
+                      <Select value={kniffelPreset} onValueChange={(val) => setKniffelPreset(val as KniffelPreset)}>
+                        <SelectTrigger id="kniffelPreset" className="bg-zinc-800 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="classic">Classic</SelectItem>
+                          <SelectItem value="triple" disabled>Triple (Coming Soon)</SelectItem>
+                          <SelectItem value="draft" disabled>Draft (Coming Soon)</SelectItem>
+                          <SelectItem value="duel" disabled>Duel (Coming Soon)</SelectItem>
+                          <SelectItem value="daily" disabled>Daily (Coming Soon)</SelectItem>
+                          <SelectItem value="ladder" disabled>Ladder (Coming Soon)</SelectItem>
+                          <SelectItem value="roguelite" disabled>Roguelite (Coming Soon)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.kniffelPreset}</TooltipContent>
+                </Tooltip>
 
-                <div className="space-y-2">
-                  <Label htmlFor="kniffelMode" className="text-white">
-                    Modus
-                  </Label>
-                  <Select value={kniffelMode} onValueChange={(val) => setKniffelMode(val as KniffelMode)}>
-                    <SelectTrigger id="kniffelMode" className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="classic">Klassisch (Jeder gegen jeden)</SelectItem>
-                      <SelectItem value="team2v2">Team 2v2</SelectItem>
-                      <SelectItem value="team3v3">Team 3v3</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {isFixedTeamSize && (
-                    <p className="text-xs text-gray-400">
-                      Team-Modi verwenden feste Spielerzahlen: 2v2 = 4, 3v3 = 6
-                    </p>
-                  )}
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-2">
+                      <Label htmlFor="kniffelMode" className="text-white">
+                        Modus
+                      </Label>
+                      <Select value={kniffelMode} onValueChange={(val) => setKniffelMode(val as KniffelMode)}>
+                        <SelectTrigger id="kniffelMode" className="bg-zinc-800 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="classic">Klassisch (Jeder gegen jeden)</SelectItem>
+                          <SelectItem value="team2v2">Team 2v2</SelectItem>
+                          <SelectItem value="team3v3">Team 3v3</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {isFixedTeamSize && (
+                        <p className="text-xs text-gray-400">
+                          Team-Modi verwenden feste Spielerzahlen: 2v2 = 4, 3v3 = 6
+                        </p>
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.kniffelMode}</TooltipContent>
+                </Tooltip>
 
                 <div className="space-y-2 border border-zinc-800 rounded-lg p-3">
                   <p className="text-sm font-semibold text-white">Regel-Toggles</p>
@@ -513,183 +567,228 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                 </div>
 
                 <div className="space-y-2 border border-zinc-800 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="categoryRandomizerEnabled"
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={categoryRandomizerEnabled}
-                      onChange={(e) => setCategoryRandomizerEnabled(e.target.checked)}
-                    />
-                    <Label htmlFor="categoryRandomizerEnabled" className="text-gray-300">
-                      Category Randomizer
-                    </Label>
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2">
+                        <input
+                          id="categoryRandomizerEnabled"
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={categoryRandomizerEnabled}
+                          onChange={(e) => setCategoryRandomizerEnabled(e.target.checked)}
+                        />
+                        <Label htmlFor="categoryRandomizerEnabled" className="text-gray-300">
+                          Category Randomizer
+                        </Label>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{tooltipCopy.categoryRandomizer}</TooltipContent>
+                  </Tooltip>
 
                   {categoryRandomizerEnabled && (
                     <div className="space-y-3">
-                      <div>
-                        <p className="text-xs text-gray-400 mb-2">Deaktivierte Kategorien</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {baseCategoryOptions.map((category) => (
-                            <label key={category} className="flex items-center gap-2 text-xs text-gray-300">
-                              <input
-                                type="checkbox"
-                                className="h-3 w-3"
-                                checked={disabledCategories.includes(category)}
-                                onChange={() => toggleCategory(category, disabledCategories, setDisabledCategories)}
-                              />
-                              {category}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400 mb-2">Special Categories</p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {specialCategoryOptions.map((category) => (
-                            <label key={category} className="flex items-center gap-2 text-xs text-gray-300">
-                              <input
-                                type="checkbox"
-                                className="h-3 w-3"
-                                checked={specialCategories.includes(category)}
-                                onChange={() => toggleCategory(category, specialCategories, setSpecialCategories)}
-                              />
-                              {category}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <p className="text-xs text-gray-400 mb-2">Deaktivierte Kategorien</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {baseCategoryOptions.map((category) => (
+                                <label key={category} className="flex items-center gap-2 text-xs text-gray-300">
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3"
+                                    checked={disabledCategories.includes(category)}
+                                    onChange={() => toggleCategory(category, disabledCategories, setDisabledCategories)}
+                                  />
+                                  {category}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{tooltipCopy.disabledCategories}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <p className="text-xs text-gray-400 mb-2">Special Categories</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              {specialCategoryOptions.map((category) => (
+                                <label key={category} className="flex items-center gap-2 text-xs text-gray-300">
+                                  <input
+                                    type="checkbox"
+                                    className="h-3 w-3"
+                                    checked={specialCategories.includes(category)}
+                                    onChange={() => toggleCategory(category, specialCategories, setSpecialCategories)}
+                                  />
+                                  {category}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>{tooltipCopy.specialCategories}</TooltipContent>
+                      </Tooltip>
                     </div>
                   )}
                 </div>
 
                 {/* Turn Timer */}
-                <div className="space-y-2">
-                  <Label htmlFor="turnTimer" className="text-white">
-                    {t('room.turnTimer')}
-                  </Label>
-                  <Select value={turnTimer} onValueChange={setTurnTimer}>
-                    <SelectTrigger id="turnTimer" className="bg-zinc-800 border-zinc-700 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">30 Sekunden</SelectItem>
-                      <SelectItem value="60">60 Sekunden</SelectItem>
-                      <SelectItem value="90">90 Sekunden</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-2">
+                      <Label htmlFor="turnTimer" className="text-white">
+                        {t('room.turnTimer')}
+                      </Label>
+                      <Select value={turnTimer} onValueChange={setTurnTimer}>
+                        <SelectTrigger id="turnTimer" className="bg-zinc-800 border-zinc-700 text-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30 Sekunden</SelectItem>
+                          <SelectItem value="60">60 Sekunden</SelectItem>
+                          <SelectItem value="90">90 Sekunden</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.turnTimer}</TooltipContent>
+                </Tooltip>
 
                 {/* AFK Threshold */}
-                <div className="space-y-2">
-                  <Label htmlFor="afkThreshold" className="text-white">
-                    {t('room.afkThreshold')}
-                  </Label>
-                  <Input
-                    id="afkThreshold"
-                    type="number"
-                    value={afkThreshold}
-                    onChange={(e) => setAfkThreshold(e.target.value)}
-                    min={1}
-                    max={10}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Spieler werden nach dieser Anzahl inaktiver Runden gekickt
-                  </p>
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-2">
+                      <Label htmlFor="afkThreshold" className="text-white">
+                        {t('room.afkThreshold')}
+                      </Label>
+                      <Input
+                        id="afkThreshold"
+                        type="number"
+                        value={afkThreshold}
+                        onChange={(e) => setAfkThreshold(e.target.value)}
+                        min={1}
+                        max={10}
+                        className="bg-zinc-800 border-zinc-700 text-white"
+                      />
+                      <p className="text-xs text-gray-400">
+                        Spieler werden nach dieser Anzahl inaktiver Runden gekickt
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.afkThreshold}</TooltipContent>
+                </Tooltip>
               </>
             )}
 
             {gameType === 'roulette' && (
-              <div className="space-y-2">
-                <Label htmlFor="spinTimer" className="text-white">
-                  Spin-Timer
-                </Label>
-                <Select value={spinTimer} onValueChange={setSpinTimer}>
-                  <SelectTrigger id="spinTimer" className="bg-zinc-800 border-zinc-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 Sekunden</SelectItem>
-                    <SelectItem value="30">30 Sekunden</SelectItem>
-                    <SelectItem value="60">60 Sekunden</SelectItem>
-                    <SelectItem value="0">Manuell</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="space-y-2">
+                    <Label htmlFor="spinTimer" className="text-white">
+                      Spin-Timer
+                    </Label>
+                    <Select value={spinTimer} onValueChange={setSpinTimer}>
+                      <SelectTrigger id="spinTimer" className="bg-zinc-800 border-zinc-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 Sekunden</SelectItem>
+                        <SelectItem value="30">30 Sekunden</SelectItem>
+                        <SelectItem value="60">60 Sekunden</SelectItem>
+                        <SelectItem value="0">Manuell</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{tooltipCopy.spinTimer}</TooltipContent>
+              </Tooltip>
             )}
 
             {gameType === 'poker' && (
-              <div className="space-y-2">
-                <Label htmlFor="startingBlinds" className="text-white">
-                  Startblinds
-                </Label>
-                <Select value={startingBlinds} onValueChange={setStartingBlinds}>
-                  <SelectTrigger id="startingBlinds" className="bg-zinc-800 border-zinc-700 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 / 10</SelectItem>
-                    <SelectItem value="10">10 / 20</SelectItem>
-                    <SelectItem value="25">25 / 50</SelectItem>
-                    <SelectItem value="50">50 / 100</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-gray-400">
-                  Small Blind / Big Blind
-                </p>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="space-y-2">
+                    <Label htmlFor="startingBlinds" className="text-white">
+                      Startblinds
+                    </Label>
+                    <Select value={startingBlinds} onValueChange={setStartingBlinds}>
+                      <SelectTrigger id="startingBlinds" className="bg-zinc-800 border-zinc-700 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 / 10</SelectItem>
+                        <SelectItem value="10">10 / 20</SelectItem>
+                        <SelectItem value="25">25 / 50</SelectItem>
+                        <SelectItem value="50">50 / 100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-400">
+                      Small Blind / Big Blind
+                    </p>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{tooltipCopy.startingBlinds}</TooltipContent>
+              </Tooltip>
             )}
 
             {/* Public/Private Toggle */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="visibility" className="text-white">
-                Sichtbarkeit
-              </Label>
-              <div className="flex gap-2">
-                <Badge
-                  variant={!isPrivate ? 'default' : 'outline'}
-                  className={`cursor-pointer ${!isPrivate ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
-                  onClick={() => setIsPrivate(false)}
-                >
-                  {t('room.public')}
-                </Badge>
-                <Badge
-                  variant={isPrivate ? 'default' : 'outline'}
-                  className={`cursor-pointer ${isPrivate ? 'bg-yellow-500 hover:bg-yellow-600' : 'hover:bg-zinc-800'}`}
-                  onClick={() => setIsPrivate(true)}
-                >
-                  {t('room.private')}
-                </Badge>
-              </div>
-            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="visibility" className="text-white">
+                    Sichtbarkeit
+                  </Label>
+                  <div className="flex gap-2">
+                    <Badge
+                      variant={!isPrivate ? 'default' : 'outline'}
+                      className={`cursor-pointer ${!isPrivate ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
+                      onClick={() => setIsPrivate(false)}
+                    >
+                      {t('room.public')}
+                    </Badge>
+                    <Badge
+                      variant={isPrivate ? 'default' : 'outline'}
+                      className={`cursor-pointer ${isPrivate ? 'bg-yellow-500 hover:bg-yellow-600' : 'hover:bg-zinc-800'}`}
+                      onClick={() => setIsPrivate(true)}
+                    >
+                      {t('room.private')}
+                    </Badge>
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>{tooltipCopy.visibility}</TooltipContent>
+            </Tooltip>
 
             {/* Free/Bet Toggle — only for Kniffel */}
             {!isCasinoGame && (
-              <div className="flex items-center justify-between">
-                <Label htmlFor="betType" className="text-white">
-                  Spielmodus
-                </Label>
-                <div className="flex gap-2">
-                  <Badge
-                    variant={!isBetRoom ? 'default' : 'outline'}
-                    className={`cursor-pointer ${!isBetRoom ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
-                    onClick={() => setIsBetRoom(false)}
-                  >
-                    Kostenlos
-                  </Badge>
-                  <Badge
-                    variant={isBetRoom ? 'default' : 'outline'}
-                    className={`cursor-pointer flex items-center gap-1 ${isBetRoom ? 'bg-amber-500 hover:bg-amber-600' : 'hover:bg-zinc-800'}`}
-                    onClick={() => setIsBetRoom(true)}
-                  >
-                    <Coins className="h-3 w-3" />
-                    Einsatz
-                  </Badge>
-                </div>
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="betType" className="text-white">
+                      Spielmodus
+                    </Label>
+                    <div className="flex gap-2">
+                      <Badge
+                        variant={!isBetRoom ? 'default' : 'outline'}
+                        className={`cursor-pointer ${!isBetRoom ? 'bg-green-500 hover:bg-green-600' : 'hover:bg-zinc-800'}`}
+                        onClick={() => setIsBetRoom(false)}
+                      >
+                        Kostenlos
+                      </Badge>
+                      <Badge
+                        variant={isBetRoom ? 'default' : 'outline'}
+                        className={`cursor-pointer flex items-center gap-1 ${isBetRoom ? 'bg-amber-500 hover:bg-amber-600' : 'hover:bg-zinc-800'}`}
+                        onClick={() => setIsBetRoom(true)}
+                      >
+                        <Coins className="h-3 w-3" />
+                        Einsatz
+                      </Badge>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>{tooltipCopy.betType}</TooltipContent>
+              </Tooltip>
             )}
 
             {/* Casino game hint */}
@@ -709,110 +808,131 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
             {/* Kniffel Bet Amount (shown only for Kniffel bet rooms) */}
             {isBetRoom && !isCasinoGame && (
               <div className="space-y-3 p-4 border border-zinc-800 rounded-lg bg-zinc-800/50">
-                <div className="space-y-2">
-                  <Label className="text-white">Einsatz pro Spieler</Label>
-                  <div className="flex gap-2">
-                    {[50, 100, 250, 500].map((preset) => (
-                      <Badge
-                        key={preset}
-                        variant="outline"
-                        className={`cursor-pointer px-3 py-1 ${
-                          betAmount === preset
-                            ? 'bg-amber-500 text-white border-amber-500'
-                            : 'hover:bg-zinc-700'
-                        }`}
-                        onClick={() => setBetAmount(preset)}
-                      >
-                        {preset}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="relative">
-                    <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="number"
-                      value={betAmount || ''}
-                      onChange={(e) => setBetAmount(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                      placeholder="Eigener Betrag"
-                      min={1}
-                      className="bg-zinc-800 border-zinc-700 text-white pl-10"
-                    />
-                  </div>
-                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="space-y-2">
+                      <Label className="text-white">Einsatz pro Spieler</Label>
+                      <div className="flex gap-2">
+                        {[50, 100, 250, 500].map((preset) => (
+                          <Badge
+                            key={preset}
+                            variant="outline"
+                            className={`cursor-pointer px-3 py-1 ${
+                              betAmount === preset
+                                ? 'bg-amber-500 text-white border-amber-500'
+                                : 'hover:bg-zinc-700'
+                            }`}
+                            onClick={() => setBetAmount(preset)}
+                          >
+                            {preset}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="relative">
+                        <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="number"
+                          value={betAmount || ''}
+                          onChange={(e) => setBetAmount(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          placeholder="Eigener Betrag"
+                          min={1}
+                          className="bg-zinc-800 border-zinc-700 text-white pl-10"
+                        />
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.betAmount}</TooltipContent>
+                </Tooltip>
 
                 {/* Min/Max Bet */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-white text-sm">Min. Einsatz</Label>
-                    <Input
-                      type="number"
-                      value={minBet || ''}
-                      onChange={(e) => setMinBet(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                      placeholder="Kein Minimum"
-                      min={0}
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-white text-sm">Max. Einsatz</Label>
-                    <Input
-                      type="number"
-                      value={maxBet || ''}
-                      onChange={(e) => setMaxBet(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                      placeholder="Kein Maximum"
-                      min={0}
-                      className="bg-zinc-800 border-zinc-700 text-white"
-                    />
-                  </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="space-y-2">
+                        <Label className="text-white text-sm">Min. Einsatz</Label>
+                        <Input
+                          type="number"
+                          value={minBet || ''}
+                          onChange={(e) => setMinBet(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          placeholder="Kein Minimum"
+                          min={0}
+                          className="bg-zinc-800 border-zinc-700 text-white"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{tooltipCopy.minBet}</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="space-y-2">
+                        <Label className="text-white text-sm">Max. Einsatz</Label>
+                        <Input
+                          type="number"
+                          value={maxBet || ''}
+                          onChange={(e) => setMaxBet(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          placeholder="Kein Maximum"
+                          min={0}
+                          className="bg-zinc-800 border-zinc-700 text-white"
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>{tooltipCopy.maxBet}</TooltipContent>
+                  </Tooltip>
                 </div>
 
                 {/* Payout Ratios */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-white text-sm">Auszahlung</Label>
-                    <Badge
-                      variant="outline"
-                      className="cursor-pointer text-xs"
-                      onClick={() => setUseCustomPayout(!useCustomPayout)}
-                    >
-                      {useCustomPayout ? 'Standard verwenden' : 'Benutzerdefiniert'}
-                    </Badge>
-                  </div>
-                  {!useCustomPayout ? (
-                    <p className="text-xs text-gray-400">
-                      Standard: 60% / 30% / 10%
-                    </p>
-                  ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <div className="space-y-2">
-                      {payoutRatios.map((ratio, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400 w-8">{ratio.position}.</span>
-                          <Input
-                            type="number"
-                            value={ratio.percentage}
-                            onChange={(e) => {
-                              const newRatios = [...payoutRatios]
-                              newRatios[idx].percentage = parseInt(e.target.value, 10) || 0
-                              setPayoutRatios(newRatios)
-                            }}
-                            min={0}
-                            max={100}
-                            className="bg-zinc-800 border-zinc-700 text-white"
-                          />
-                          <span className="text-xs text-gray-400">%</span>
-                        </div>
-                      ))}
-                      {payoutRatios.reduce((sum, r) => sum + r.percentage, 0) !== 100 && (
-                        <p className="text-xs text-red-500">
-                          Summe muss 100% ergeben (aktuell: {payoutRatios.reduce((sum, r) => sum + r.percentage, 0)}%)
+                      <div className="flex items-center justify-between">
+                        <Label className="text-white text-sm">Auszahlung</Label>
+                        <Badge
+                          variant="outline"
+                          className="cursor-pointer text-xs"
+                          onClick={() => setUseCustomPayout(!useCustomPayout)}
+                        >
+                          {useCustomPayout ? 'Standard verwenden' : 'Benutzerdefiniert'}
+                        </Badge>
+                      </div>
+                      {!useCustomPayout ? (
+                        <p className="text-xs text-gray-400">
+                          Standard: 60% / 30% / 10%
                         </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {payoutRatios.map((ratio, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span className="text-xs text-gray-400 w-8">{ratio.position}.</span>
+                              <Input
+                                type="number"
+                                value={ratio.percentage}
+                                onChange={(e) => {
+                                  const newRatios = [...payoutRatios]
+                                  newRatios[idx].percentage = parseInt(e.target.value, 10) || 0
+                                  setPayoutRatios(newRatios)
+                                }}
+                                min={0}
+                                max={100}
+                                className="bg-zinc-800 border-zinc-700 text-white"
+                              />
+                              <span className="text-xs text-gray-400">%</span>
+                            </div>
+                          ))}
+                          {payoutRatios.reduce((sum, r) => sum + r.percentage, 0) !== 100 && (
+                            <p className="text-xs text-red-500">
+                              Summe muss 100% ergeben (aktuell: {payoutRatios.reduce((sum, r) => sum + r.percentage, 0)}%)
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </TooltipTrigger>
+                  <TooltipContent>{tooltipCopy.payoutRatios}</TooltipContent>
+                </Tooltip>
               </div>
             )}
           </div>
+          </TooltipProvider>
 
           <DialogFooter>
             <Button
