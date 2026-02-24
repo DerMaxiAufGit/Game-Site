@@ -1828,6 +1828,8 @@ app.prepare().then(() => {
           turnTimer: room.turnTimer,
           afkThreshold: room.afkThreshold,
           kniffelMode,
+          kniffelPreset: room.kniffelPreset || 'classic',
+          kniffelRuleset: room.kniffelRuleset,
           teams: teamSetup.teams
         }
         room.gameState = createInitialState(playerData, settings)

@@ -7,9 +7,12 @@ import type {
   ScoreCategory,
   KniffelScoresheet,
   KniffelMode,
-  TeamInfo
+  TeamInfo,
+  KniffelPreset,
+  KniffelRuleset
 } from '@/types/game'
 import { calculateScore, calculateTotalScore } from './kniffel-rules'
+import { resolveKniffelRuleset } from './kniffel-ruleset'
 
 // Action types
 export type GameAction =
@@ -24,7 +27,14 @@ export type GameAction =
  */
 export function createInitialState(
   players: Array<{ userId: string; displayName: string }>,
-  settings: { turnTimer: number; afkThreshold: number; kniffelMode?: KniffelMode; teams?: TeamInfo[] }
+  settings: {
+    turnTimer: number
+    afkThreshold: number
+    kniffelMode?: KniffelMode
+    kniffelPreset?: KniffelPreset
+    kniffelRuleset?: Partial<KniffelRuleset>
+    teams?: TeamInfo[]
+  }
 ): GameState {
   const teamByUserId = new Map<string, string>()
   for (const team of settings.teams || []) {
@@ -44,9 +54,13 @@ export function createInitialState(
     consecutiveInactive: 0
   }))
 
+  const ruleset = resolveKniffelRuleset(settings.kniffelPreset || 'classic', settings.kniffelRuleset)
+
   return {
     phase: 'waiting',
     kniffelMode: settings.kniffelMode || 'classic',
+    ruleset,
+    rulesVersion: 1,
     teams: settings.teams || [],
     players: playerStates,
     spectators: [],
