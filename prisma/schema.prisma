@@ -60,6 +60,18 @@ model GameRoom {
   host          User     @relation("HostedRooms", fields: [hostId], references: [id])
 }
 
+model DailyChallengeScore {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
+}
+
 model Wallet {
   id                String    @id @default(cuid())
   userId            String    @unique
