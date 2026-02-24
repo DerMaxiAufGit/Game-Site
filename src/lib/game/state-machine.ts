@@ -13,6 +13,7 @@ import type {
 } from '@/types/game'
 import { calculateScoreWithRuleset, calculateTotalScore } from './kniffel-rules'
 import { resolveKniffelRuleset } from './kniffel-ruleset'
+import { isCategoryAllowedByConstraints } from './constraints'
 
 // Action types
 export type GameAction =
@@ -353,6 +354,13 @@ function handleChooseCategory(
 
     if (!allowed.includes(category)) {
       return new Error('Category disabled')
+    }
+  }
+
+  if (ruleset.constraintsEnabled) {
+    const constraints = state.matchState?.constraints ?? []
+    if (!isCategoryAllowedByConstraints(constraints, category)) {
+      return new Error('Category blocked by constraints')
     }
   }
 
