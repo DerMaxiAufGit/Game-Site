@@ -56,6 +56,8 @@ export function createInitialState(
 
   const ruleset = resolveKniffelRuleset(settings.kniffelPreset || 'classic', settings.kniffelRuleset)
 
+  const maxRolls = ruleset.maxRolls || 3
+
   return {
     phase: 'waiting',
     kniffelMode: settings.kniffelMode || 'classic',
@@ -67,7 +69,7 @@ export function createInitialState(
     currentPlayerIndex: 0,
     dice: [1, 1, 1, 1, 1],
     keptDice: [false, false, false, false, false],
-    rollsRemaining: 3,
+    rollsRemaining: maxRolls,
     round: 1,
     turnStartedAt: null,
     turnDuration: settings.turnTimer,
@@ -126,6 +128,7 @@ export function isValidAction(
  * Advance to the next player's turn
  */
 export function advanceTurn(state: GameState): GameState {
+  const maxRolls = state.ruleset?.maxRolls || 3
   const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length
 
   // Check if we completed a full round
@@ -141,7 +144,7 @@ export function advanceTurn(state: GameState): GameState {
   const newState: GameState = {
     ...state,
     currentPlayerIndex: nextPlayerIndex,
-    rollsRemaining: 3,
+    rollsRemaining: maxRolls,
     keptDice: [false, false, false, false, false],
     round: newRound,
     turnStartedAt: Date.now()
