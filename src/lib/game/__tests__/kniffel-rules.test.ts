@@ -6,6 +6,7 @@ import {
   autoPickCategory,
   calculateTotalScore,
   calculateScoreWithRuleset,
+  getAvailableCategoriesWithRuleset,
 } from '../kniffel-rules'
 
 describe('calculateScore', () => {
@@ -162,6 +163,36 @@ describe('calculateScore', () => {
       expect(calculateScore('chance', [1, 1, 1, 1, 1])).toBe(5)
     })
   })
+
+  describe('Special categories', () => {
+    it('scores twoPairs when two distinct pairs exist', () => {
+      expect(calculateScore('twoPairs', [2, 2, 5, 5, 6])).toBe(20)
+      expect(calculateScore('twoPairs', [3, 3, 4, 4, 4])).toBe(18)
+    })
+
+    it('returns 0 for twoPairs when fewer than two pairs exist', () => {
+      expect(calculateScore('twoPairs', [2, 2, 3, 4, 5])).toBe(0)
+      expect(calculateScore('twoPairs', [2, 3, 4, 5, 6])).toBe(0)
+    })
+
+    it('scores allEven when all dice are even', () => {
+      expect(calculateScore('allEven', [2, 2, 4, 4, 6])).toBe(18)
+      expect(calculateScore('allEven', [2, 4, 6, 6, 6])).toBe(24)
+    })
+
+    it('returns 0 for allEven when any die is odd', () => {
+      expect(calculateScore('allEven', [1, 2, 4, 4, 6])).toBe(0)
+    })
+
+    it('scores sumAtLeast24 when sum is at least 24', () => {
+      expect(calculateScore('sumAtLeast24', [6, 6, 6, 4, 2])).toBe(24)
+      expect(calculateScore('sumAtLeast24', [6, 6, 6, 6, 6])).toBe(30)
+    })
+
+    it('returns 0 for sumAtLeast24 when sum is below 24', () => {
+      expect(calculateScore('sumAtLeast24', [1, 2, 3, 4, 5])).toBe(0)
+    })
+  })
 })
 
 describe('calculateUpperBonus', () => {
@@ -269,6 +300,31 @@ describe('getAvailableCategories', () => {
     expect(available).toHaveLength(11)
     expect(available).not.toContain('ones')
     expect(available).not.toContain('kniffel')
+  })
+})
+
+describe('getAvailableCategoriesWithRuleset', () => {
+  const baseRuleset: KniffelRuleset = {
+    preset: 'classic',
+    allowScratch: true,
+    strictStraights: false,
+    fullHouseUsesSum: false,
+    maxRolls: 3,
+    categoryRandomizer: {
+      enabled: true,
+      disabledCategories: ['chance'],
+      specialCategories: ['twoPairs'],
+    },
+    speedMode: {
+      enabled: false,
+      autoScore: false,
+    },
+  }
+
+  it('excludes disabled categories and includes special categories', () => {
+    const available = getAvailableCategoriesWithRuleset({}, baseRuleset)
+    expect(available).not.toContain('chance')
+    expect(available).toContain('twoPairs')
   })
 })
 

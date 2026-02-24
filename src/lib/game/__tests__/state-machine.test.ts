@@ -402,6 +402,40 @@ describe('applyAction - CHOOSE_CATEGORY', () => {
     expect(result).toBeInstanceOf(Error)
     expect((result as Error).message).toContain('Scratch not allowed')
   })
+
+  it('returns error when category is disabled by ruleset', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      {
+        turnTimer: 60,
+        afkThreshold: 3,
+        kniffelRuleset: {
+          categoryRandomizer: {
+            enabled: true,
+            disabledCategories: ['chance'],
+            specialCategories: []
+          }
+        }
+      }
+    )
+
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user1') as GameState
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user2') as GameState
+
+    state = applyAction(state, {
+      type: 'ROLL_DICE',
+      keptDice: [false, false, false, false, false],
+      newDice: [1, 2, 3, 4, 5]
+    }, 'user1') as GameState
+
+    const result = applyAction(state, { type: 'CHOOSE_CATEGORY', category: 'chance' }, 'user1')
+
+    expect(result).toBeInstanceOf(Error)
+    expect((result as Error).message).toContain('Category disabled')
+  })
 })
 
 describe('advanceTurn', () => {
