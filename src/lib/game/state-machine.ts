@@ -14,6 +14,7 @@ import type {
 import { calculateScoreWithRuleset, calculateTotalScore } from './kniffel-rules'
 import { resolveKniffelRuleset } from './kniffel-ruleset'
 import { isCategoryAllowedByConstraints } from './constraints'
+import { applyEffects } from './kniffel-effects'
 
 // Action types
 export type GameAction =
@@ -258,19 +259,21 @@ function handleRollDice(
   keptDice: boolean[],
   newDice: DiceValue[]
 ): GameState | Error {
+  const effectState = applyEffects(state, 'onBeforeRoll')
+
   // Must be in rolling phase
-  if (state.phase !== 'rolling') {
+  if (effectState.phase !== 'rolling') {
     return new Error('Not in rolling phase')
   }
 
   // Must be current player
-  const currentPlayer = state.players[state.currentPlayerIndex]
+  const currentPlayer = effectState.players[effectState.currentPlayerIndex]
   if (currentPlayer.userId !== userId) {
     return new Error('Not your turn')
   }
 
   // Must have rolls remaining
-  if (state.rollsRemaining <= 0) {
+  if (effectState.rollsRemaining <= 0) {
     return new Error('No rolls remaining')
   }
 
@@ -279,20 +282,20 @@ function handleRollDice(
 
   for (let i = 0; i < 5; i++) {
     if (keptDice[i]) {
-      resultDice[i] = state.dice[i] // Keep existing
+      resultDice[i] = effectState.dice[i] // Keep existing
     } else {
       resultDice[i] = newDice[i] // Use new (same index)
     }
   }
 
-  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
-  const nextPhase = ruleset.draftEnabled ? 'draft_claim' : state.phase
+  const ruleset = effectState.ruleset || resolveKniffelRuleset('classic')
+  const nextPhase = ruleset.draftEnabled ? 'draft_claim' : effectState.phase
 
   return {
-    ...state,
+    ...effectState,
     dice: resultDice,
     keptDice: [...keptDice],
-    rollsRemaining: state.rollsRemaining - 1,
+    rollsRemaining: effectState.rollsRemaining - 1,
     phase: nextPhase
   }
 }

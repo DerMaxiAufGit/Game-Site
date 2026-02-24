@@ -167,6 +167,41 @@ describe('applyAction - ROLL_DICE', () => {
     }
   })
 
+  it('runs onBeforeRoll effects', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      { turnTimer: 60, afkThreshold: 3 }
+    )
+
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user1') as GameState
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user2') as GameState
+    state = {
+      ...state,
+      modifiers: {
+        effects: [
+          {
+            hook: 'onBeforeRoll',
+            apply: (s: GameState) => ({ ...s, effectApplied: true })
+          }
+        ]
+      }
+    }
+
+    const result = applyAction(state, {
+      type: 'ROLL_DICE',
+      keptDice: [false, false, false, false, false],
+      newDice: [3, 4, 5, 6, 2]
+    }, 'user1')
+
+    expect(result).not.toBeInstanceOf(Error)
+    if (!(result instanceof Error)) {
+      expect((result as GameState & { effectApplied?: boolean }).effectApplied).toBe(true)
+    }
+  })
+
   it('transitions to draft_claim after rolling in draft mode', () => {
     let state = createInitialState(
       [
