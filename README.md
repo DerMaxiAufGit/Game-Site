@@ -17,10 +17,10 @@ npm install
 ### 3) Configure environment
 Copy the example env file and edit it:
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Set these values in `.env.local`:
+Set these values in `.env` (or `.env.local` to override locally):
 - `DATABASE_URL` (PostgreSQL connection string)
 - `SESSION_SECRET` (generate with `openssl rand -base64 32`)
 - `RESEND_API_KEY`
@@ -52,6 +52,6 @@ http://localhost:3000
 (or whatever you set in `NEXT_PUBLIC_APP_URL`).
 
 ## Troubleshooting
-- Missing env values: verify `.env.local` is present and filled out.
+- Missing env values: verify `.env` is present and filled out (use `.env.local` for overrides).
 - DB connection errors: check `DATABASE_URL` and that PostgreSQL is running.
 - App complains about missing system settings: run `npx prisma db seed`.

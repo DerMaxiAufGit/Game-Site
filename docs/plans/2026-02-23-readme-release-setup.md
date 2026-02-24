@@ -26,7 +26,7 @@ Create `README.md` with the following sections and exact commands:
   - Download and unzip release
   - `cd` into release directory
   - Install deps: `npm install`
-  - Create env: copy `.env.example` to `.env.local`
+  - Create env: copy `.env.example` to `.env` (use `.env.local` for overrides)
   - Fill env values: `DATABASE_URL`, `SESSION_SECRET`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `NEXT_PUBLIC_APP_URL`
   - Prisma deploy: `npx prisma migrate deploy`
   - Seed: `npx prisma db seed`
@@ -34,7 +34,7 @@ Create `README.md` with the following sections and exact commands:
   - Start: `npm run start`
   - Access: `http://localhost:3000` (or configured URL)
 - `## Troubleshooting`
-  - Missing env vars → check `.env.local`
+  - Missing env vars → check `.env` (or `.env.local` overrides)
   - DB connection errors → verify `DATABASE_URL` and Postgres running
   - Seed required → run `npx prisma db seed` if app complains about missing system settings
 
