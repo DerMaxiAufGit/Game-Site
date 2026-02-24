@@ -18,7 +18,7 @@ import { LogOut, XCircle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { GameState, PauseVote, ScoreCategory } from '@/types/game'
-import { calculateTotalScore } from '@/lib/game/kniffel-rules'
+import { buildTeamTotals } from '@/lib/game/kniffel-teams'
 
 interface GameBoardProps {
   gameState: GameState
@@ -222,15 +222,11 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket, is
 
   const canRoll = isMyTurn && !isPaused && localGameState.rollsRemaining > 0 && !isAnimating
   const canScore = isMyTurn && !isPaused && localGameState.rollsRemaining < 3 && !isAnimating
-  const teamTotals = (localGameState.teams || []).map(team => {
-    const members = localGameState.players.filter(player => team.memberUserIds.includes(player.userId))
-    return {
-      teamId: team.id,
-      teamName: team.name,
-      total: members.reduce((sum, member) => sum + calculateTotalScore(member.scoresheet), 0),
-      members: members.map(member => member.displayName).join(', ')
-    }
-  }).sort((a, b) => b.total - a.total)
+  const teamTotals = buildTeamTotals(
+    localGameState.teams || [],
+    localGameState.players,
+    localGameState.ruleset
+  )
 
   return (
     <>
@@ -246,6 +242,7 @@ export function GameBoard({ gameState, roomId, currentUserId, hostId, socket, is
               currentPlayerIndex={localGameState.currentPlayerIndex}
               currentUserId={currentUserId}
               spectatorCount={localGameState.spectators.length}
+              ruleset={localGameState.ruleset}
             />
           </div>
           {isBetRoom && totalPot > 0 && (
