@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import type { PlayerState, DiceValues, ScoreCategory } from '@/types/game'
-import { calculateScore, calculateUpperBonus, calculateTotalScore } from '@/lib/game/kniffel-rules'
+import type { PlayerState, DiceValues, ScoreCategory, KniffelRuleset } from '@/types/game'
+import { calculateScore, calculateScoreWithRuleset, calculateUpperBonus, calculateTotalScore } from '@/lib/game/kniffel-rules'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -14,6 +14,7 @@ interface ScoresheetProps {
   currentUserId: string
   dice: DiceValues
   rollsRemaining: number
+  ruleset?: KniffelRuleset
   onSelectCategory: (category: ScoreCategory) => void
   canScore: boolean
 }
@@ -26,6 +27,7 @@ export function Scoresheet({
   currentUserId,
   dice,
   rollsRemaining,
+  ruleset,
   onSelectCategory,
   canScore
 }: ScoresheetProps) {
@@ -35,15 +37,27 @@ export function Scoresheet({
   const currentPlayer = players.find(p => p.userId === currentUserId)
   const isCurrentTurn = players[currentPlayerIndex]?.userId === currentUserId
 
-  // Upper section categories
+  const maxRolls = ruleset?.maxRolls ?? 3
+  const randomizerEnabled = ruleset?.categoryRandomizer?.enabled ?? false
+  const disabledCategories = new Set(
+    randomizerEnabled ? ruleset?.categoryRandomizer?.disabledCategories ?? [] : []
+  )
+  const specialCategories = randomizerEnabled
+    ? ruleset?.categoryRandomizer?.specialCategories ?? []
+    : []
+
   const upperCategories: ScoreCategory[] = [
     'ones', 'twos', 'threes', 'fours', 'fives', 'sixes'
-  ]
+  ].filter(category => !disabledCategories.has(category))
 
-  // Lower section categories
-  const lowerCategories: ScoreCategory[] = [
+  const lowerBaseCategories: ScoreCategory[] = [
     'threeOfKind', 'fourOfKind', 'fullHouse',
     'smallStraight', 'largeStraight', 'kniffel', 'chance'
+  ].filter(category => !disabledCategories.has(category))
+
+  const lowerCategories: ScoreCategory[] = [
+    ...lowerBaseCategories,
+    ...specialCategories.filter(category => !disabledCategories.has(category))
   ]
 
   const renderCategoryRow = (
@@ -53,8 +67,10 @@ export function Scoresheet({
   ) => {
     const scored = player.scoresheet[category]
     const isAvailable = scored === undefined
-    const potentialScore = showPotential && isAvailable && rollsRemaining < 3
-      ? calculateScore(category, dice)
+    const potentialScore = showPotential && isAvailable && rollsRemaining < maxRolls
+      ? (ruleset
+        ? calculateScoreWithRuleset(category, dice, ruleset)
+        : calculateScore(category, dice))
       : null
     const isClickable = showPotential && canScore && isAvailable
 
@@ -134,9 +150,11 @@ export function Scoresheet({
                   const showPotential =
                     player.userId === currentUserId &&
                     isCurrentTurn &&
-                    rollsRemaining < 3
+                    rollsRemaining < maxRolls
                   const potentialScore = showPotential && isAvailable
-                    ? calculateScore(category, dice)
+                    ? (ruleset
+                      ? calculateScoreWithRuleset(category, dice, ruleset)
+                      : calculateScore(category, dice))
                     : null
 
                   return (
@@ -224,9 +242,11 @@ export function Scoresheet({
                   const showPotential =
                     player.userId === currentUserId &&
                     isCurrentTurn &&
-                    rollsRemaining < 3
+                    rollsRemaining < maxRolls
                   const potentialScore = showPotential && isAvailable
-                    ? calculateScore(category, dice)
+                    ? (ruleset
+                      ? calculateScoreWithRuleset(category, dice, ruleset)
+                      : calculateScore(category, dice))
                     : null
 
                   return (
