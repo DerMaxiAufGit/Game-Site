@@ -279,6 +279,22 @@ function handleChooseCategory(
 
   // Calculate score
   const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+
+  if (ruleset.categoryRandomizer.enabled) {
+    const baseCategories: ScoreCategory[] = [
+      'ones', 'twos', 'threes', 'fours', 'fives', 'sixes',
+      'threeOfKind', 'fourOfKind', 'fullHouse',
+      'smallStraight', 'largeStraight', 'kniffel', 'chance'
+    ]
+    const disabled = new Set(ruleset.categoryRandomizer.disabledCategories)
+    const allowed = [...baseCategories, ...ruleset.categoryRandomizer.specialCategories]
+      .filter(cat => !disabled.has(cat))
+
+    if (!allowed.includes(category)) {
+      return new Error('Category disabled')
+    }
+  }
+
   const score = calculateScoreWithRuleset(category, state.dice, ruleset)
 
   if (!ruleset.allowScratch && score === 0) {

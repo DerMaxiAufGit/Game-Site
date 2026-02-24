@@ -49,6 +49,16 @@ export function calculateScore(category: ScoreCategory, dice: DiceValues): numbe
     case 'chance':
       return sumDice(dice)
 
+    // Special categories
+    case 'twoPairs':
+      return hasTwoPairs(counts) ? sumDice(dice) : 0
+
+    case 'allEven':
+      return dice.every(die => die % 2 === 0) ? sumDice(dice) : 0
+
+    case 'sumAtLeast24':
+      return sumDice(dice) >= 24 ? sumDice(dice) : 0
+
     default:
       return 0
   }
@@ -110,11 +120,36 @@ export function getAvailableCategories(scoresheet: KniffelScoresheet): ScoreCate
   })
 }
 
+export function getAvailableCategoriesWithRuleset(
+  scoresheet: KniffelScoresheet,
+  ruleset: KniffelRuleset
+): ScoreCategory[] {
+  const base = getAvailableCategories(scoresheet)
+
+  if (!ruleset.categoryRandomizer.enabled) {
+    return base
+  }
+
+  const disabled = new Set(ruleset.categoryRandomizer.disabledCategories)
+  const specials = ruleset.categoryRandomizer.specialCategories
+
+  const filtered = base.filter(category => !disabled.has(category))
+  const extras = specials.filter(category => scoresheet[category] === undefined && !filtered.includes(category))
+
+  return [...filtered, ...extras]
+}
+
 /**
  * Automatically pick the best available category for given dice
  */
-export function autoPickCategory(dice: DiceValues, scoresheet: KniffelScoresheet): ScoreCategory {
-  const available = getAvailableCategories(scoresheet)
+export function autoPickCategory(
+  dice: DiceValues,
+  scoresheet: KniffelScoresheet,
+  ruleset?: KniffelRuleset
+): ScoreCategory {
+  const available = ruleset
+    ? getAvailableCategoriesWithRuleset(scoresheet, ruleset)
+    : getAvailableCategories(scoresheet)
 
   if (available.length === 0) {
     throw new Error('No available categories')
@@ -123,7 +158,9 @@ export function autoPickCategory(dice: DiceValues, scoresheet: KniffelScoresheet
   // Calculate scores for all available categories
   const scores = available.map(category => ({
     category,
-    score: calculateScore(category, dice)
+    score: ruleset
+      ? calculateScoreWithRuleset(category, dice, ruleset)
+      : calculateScore(category, dice)
   }))
 
   // Sort by score descending, prefer lower section on ties
@@ -160,7 +197,10 @@ export function calculateTotalScore(scoresheet: KniffelScoresheet): number {
     (scoresheet.smallStraight ?? 0) +
     (scoresheet.largeStraight ?? 0) +
     (scoresheet.kniffel ?? 0) +
-    (scoresheet.chance ?? 0)
+    (scoresheet.chance ?? 0) +
+    (scoresheet.twoPairs ?? 0) +
+    (scoresheet.allEven ?? 0) +
+    (scoresheet.sumAtLeast24 ?? 0)
   )
 
   const bonus = calculateUpperBonus(scoresheet)
@@ -228,6 +268,11 @@ function hasLargeStraight(counts: Record<DiceValue, number>): boolean {
   return patterns.some(pattern =>
     pattern.every(value => counts[value as DiceValue] >= 1)
   )
+}
+
+function hasTwoPairs(counts: Record<DiceValue, number>): boolean {
+  const pairCount = Object.values(counts).filter(count => count >= 2).length
+  return pairCount >= 2
 }
 
 function hasStrictSmallStraight(counts: Record<DiceValue, number>): boolean {

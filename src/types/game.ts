@@ -60,6 +60,7 @@ export type ScoreCategory =
   | 'ones' | 'twos' | 'threes' | 'fours' | 'fives' | 'sixes'  // upper
   | 'threeOfKind' | 'fourOfKind' | 'fullHouse'                   // lower
   | 'smallStraight' | 'largeStraight' | 'kniffel' | 'chance'     // lower
+  | 'twoPairs' | 'allEven' | 'sumAtLeast24'                      // special
 
 export interface KniffelScoresheet {
   ones?: number
@@ -75,6 +76,9 @@ export interface KniffelScoresheet {
   largeStraight?: number
   kniffel?: number
   chance?: number
+  twoPairs?: number
+  allEven?: number
+  sumAtLeast24?: number
 }
 
 // Player state within a game

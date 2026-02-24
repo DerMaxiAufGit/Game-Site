@@ -7,7 +7,8 @@ import { Server } from 'socket.io'
 import { jwtVerify } from 'jose'
 import { PrismaClient } from '@prisma/client'
 import { applyAction, createInitialState } from './src/lib/game/state-machine.js'
-import { autoPickCategory, calculateScore, calculateTotalScore } from './src/lib/game/kniffel-rules.js'
+import { autoPickCategory, calculateScoreWithRuleset, calculateTotalScore } from './src/lib/game/kniffel-rules.js'
+import { resolveKniffelRuleset } from './src/lib/game/kniffel-ruleset.js'
 import { rollDice } from './src/lib/game/crypto-rng.js'
 import { getWalletWithUser, getTransactionHistory, creditBalance, debitBalance, getSystemSettings } from './src/lib/wallet/transactions.js'
 import { calculatePayouts } from './src/lib/wallet/payout.js'
@@ -430,7 +431,8 @@ async function autoPlay(roomId, io) {
 
   // If player hasn't rolled yet, roll for them via state machine
   let state = gs
-  if (state.rollsRemaining === 3) {
+  const maxRolls = state.ruleset?.maxRolls || 3
+  if (state.rollsRemaining === maxRolls) {
     const newDice = rollDice(5)
     const rollAction = { type: 'ROLL_DICE', keptDice: [false, false, false, false, false], newDice }
     const rollResult = applyAction(state, rollAction, currentPlayer.userId)
@@ -440,7 +442,8 @@ async function autoPlay(roomId, io) {
   }
 
   // Pick best category using imported autoPickCategory from kniffel-rules.js
-  const bestCategory = autoPickCategory(state.dice, currentPlayer.scoresheet)
+  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+  const bestCategory = autoPickCategory(state.dice, currentPlayer.scoresheet, ruleset)
 
   // Apply scoring via state machine
   const scoreAction = { type: 'CHOOSE_CATEGORY', category: bestCategory }
@@ -455,7 +458,7 @@ async function autoPlay(roomId, io) {
   room.gameState = result
   currentPlayer.consecutiveInactive += 1
 
-  const score = calculateScore(bestCategory, state.dice)
+  const score = calculateScoreWithRuleset(bestCategory, state.dice, ruleset)
   sendSystemMessage(roomId, io, `Auto-Zug: ${currentPlayer.displayName} -> ${bestCategory} (${score} Punkte)`)
 
   // Check AFK threshold
