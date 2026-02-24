@@ -16,6 +16,19 @@ export interface KniffelRuleset {
   strictStraights: boolean
   fullHouseUsesSum: boolean
   maxRolls: number
+  columnCount: number
+  columnMultipliers: number[]
+  columnSelection: 'choose' | 'round'
+  jokerCount: number
+  jokerMaxPerTurn: number
+  draftEnabled: boolean
+  duelEnabled: boolean
+  riskRollEnabled: boolean
+  riskRollThreshold: number
+  dailyEnabled: boolean
+  ladderEnabled: boolean
+  constraintsEnabled: boolean
+  rogueliteEnabled: boolean
   categoryRandomizer: {
     enabled: boolean
     disabledCategories: ScoreCategory[]
@@ -28,17 +41,27 @@ export interface KniffelRuleset {
 }
 
 export interface MatchState {
-  mode?: 'duel' | 'draft'
-  round: number
+  mode?: 'duel' | 'draft' | 'risk' | 'daily' | 'ladder' | 'roguelite'
+  round?: number
   totalRounds?: number
   winsByUserId?: Record<string, number>
   activeCategories?: ScoreCategory[]
+  draftOrder?: string[]
+  draftPool?: number[][]
+  draftCurrentIndex?: number
+  roundWinners?: string[]
+  duelCategoryPool?: ScoreCategory[]
+  riskDebt?: boolean
+  dailySeed?: string
+  ladderRung?: number
+  constraints?: string[]
 }
 
 export interface ModifiersState {
   jokersByUserId?: Record<string, number>
   perksByUserId?: Record<string, string[]>
   cursesByUserId?: Record<string, string[]>
+  effects?: Array<{ id: string; type: string; value: number; remainingTurns: number }>
   boss?: {
     id: string
     turnsRemaining: number
