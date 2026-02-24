@@ -20,6 +20,7 @@ export type GameAction =
   | { type: 'ROLL_DICE'; keptDice: boolean[]; newDice: DiceValue[] }
   | { type: 'CHOOSE_CATEGORY'; category: ScoreCategory; auto?: boolean; columnIndex?: number }
   | { type: 'USE_JOKER'; dieIndex: number; delta: 1 | -1 }
+  | { type: 'TAKE_RISK_ROLL'; newDice: DiceValue[] }
   | { type: 'PLAYER_DISCONNECT'; userId: string }
   | { type: 'PLAYER_RECONNECT'; userId: string }
 
@@ -127,6 +128,9 @@ export function applyAction(
 
     case 'USE_JOKER':
       return handleUseJoker(state, userId, action.dieIndex, action.delta)
+
+    case 'TAKE_RISK_ROLL':
+      return handleTakeRiskRoll(state, userId, action.newDice)
 
     case 'PLAYER_DISCONNECT':
       return handlePlayerDisconnect(state, action.userId)
@@ -445,6 +449,45 @@ function handleUseJoker(
         ...state.modifiers?.jokersUsedThisTurnByUserId,
         [userId]: usedThisTurn + 1
       }
+    }
+  }
+}
+
+function handleTakeRiskRoll(
+  state: GameState,
+  userId: string,
+  newDice: DiceValue[]
+): GameState | Error {
+  if (state.phase !== 'rolling') {
+    return new Error('Not in rolling phase')
+  }
+
+  const currentPlayer = state.players[state.currentPlayerIndex]
+  if (currentPlayer.userId !== userId) {
+    return new Error('Not your turn')
+  }
+
+  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+  if (!ruleset.riskRollEnabled) {
+    return new Error('Risk roll disabled')
+  }
+
+  if (state.rollsRemaining > 0) {
+    return new Error('Risk roll only allowed after rolls exhausted')
+  }
+
+  const nextDice = newDice as DiceValues
+  const sum = nextDice.reduce((total, die) => total + die, 0)
+  const riskDebt = sum < ruleset.riskRollThreshold
+
+  return {
+    ...state,
+    dice: nextDice,
+    keptDice: [false, false, false, false, false],
+    matchState: {
+      ...state.matchState,
+      mode: 'risk',
+      riskDebt
     }
   }
 }

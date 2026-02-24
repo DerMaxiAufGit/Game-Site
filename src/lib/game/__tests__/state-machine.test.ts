@@ -607,6 +607,37 @@ describe('applyAction - USE_JOKER', () => {
   })
 })
 
+describe('applyAction - TAKE_RISK_ROLL', () => {
+  it('allows risk roll after rolls exhausted', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      {
+        turnTimer: 60,
+        afkThreshold: 3,
+        kniffelRuleset: { riskRollEnabled: true, riskRollThreshold: 24 }
+      }
+    )
+
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user1') as GameState
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user2') as GameState
+    state = { ...state, dice: [1, 1, 1, 1, 1], rollsRemaining: 0 }
+
+    const result = applyAction(state, {
+      type: 'TAKE_RISK_ROLL',
+      newDice: [6, 6, 6, 6, 1]
+    }, 'user1')
+
+    expect(result).not.toBeInstanceOf(Error)
+    if (!(result instanceof Error)) {
+      expect(result.dice).toEqual([6, 6, 6, 6, 1])
+      expect(result.matchState?.riskDebt).toBe(false)
+    }
+  })
+})
+
 describe('advanceTurn', () => {
   it('advances to next player', () => {
     let state = createInitialState(
