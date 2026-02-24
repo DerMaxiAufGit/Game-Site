@@ -268,8 +268,11 @@ function handleChooseCategory(
     return new Error('Not your turn')
   }
 
+  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+
   // Must have rolled at least once
-  if (state.rollsRemaining === 3) {
+  const maxRolls = ruleset.maxRolls || 3
+  if (state.rollsRemaining === maxRolls) {
     return new Error('Must roll at least once before scoring')
   }
 
@@ -279,8 +282,6 @@ function handleChooseCategory(
   }
 
   // Calculate score
-  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
-
   if (ruleset.categoryRandomizer.enabled) {
     const baseCategories: ScoreCategory[] = [
       'ones', 'twos', 'threes', 'fours', 'fives', 'sixes',

@@ -375,6 +375,28 @@ describe('applyAction - CHOOSE_CATEGORY', () => {
     expect((result as Error).message).toContain('Must roll at least once')
   })
 
+  it('uses ruleset maxRolls when validating first roll requirement', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      {
+        turnTimer: 60,
+        afkThreshold: 3,
+        kniffelRuleset: { maxRolls: 4 }
+      }
+    )
+
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user1') as GameState
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user2') as GameState
+
+    const result = applyAction(state, { type: 'CHOOSE_CATEGORY', category: 'threes' }, 'user1')
+
+    expect(result).toBeInstanceOf(Error)
+    expect((result as Error).message).toContain('Must roll at least once')
+  })
+
   it('returns error when scratch is disallowed and score is zero', () => {
     let state = createInitialState(
       [
