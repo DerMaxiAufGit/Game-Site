@@ -1,5 +1,16 @@
 import type { KniffelPreset, KniffelRuleset } from '@/types/game'
 
+export interface KniffelRulesetOverridesInput {
+  allowScratch: boolean
+  strictStraights: boolean
+  fullHouseUsesSum: boolean
+  maxRolls: number
+  speedModeEnabled: boolean
+  categoryRandomizerEnabled: boolean
+  disabledCategories: KniffelRuleset['categoryRandomizer']['disabledCategories']
+  specialCategories: KniffelRuleset['categoryRandomizer']['specialCategories']
+}
+
 const CLASSIC_RULESET: KniffelRuleset = {
   preset: 'classic',
   allowScratch: true,
@@ -50,4 +61,24 @@ export function resolveKniffelRuleset(
 ): KniffelRuleset {
   const base = PRESET_RULESETS[preset] || CLASSIC_RULESET
   return mergeRuleset(base, overrides)
+}
+
+export function buildKniffelRulesetOverrides(
+  input: KniffelRulesetOverridesInput
+): Partial<KniffelRuleset> {
+  return {
+    allowScratch: input.allowScratch,
+    strictStraights: input.strictStraights,
+    fullHouseUsesSum: input.fullHouseUsesSum,
+    maxRolls: input.maxRolls,
+    speedMode: {
+      enabled: input.speedModeEnabled,
+      autoScore: input.speedModeEnabled,
+    },
+    categoryRandomizer: {
+      enabled: input.categoryRandomizerEnabled,
+      disabledCategories: input.disabledCategories,
+      specialCategories: input.specialCategories,
+    },
+  }
 }
