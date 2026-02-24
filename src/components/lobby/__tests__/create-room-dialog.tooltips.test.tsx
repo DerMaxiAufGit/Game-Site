@@ -33,5 +33,5 @@ jest.mock('@/components/ui/tooltip', () => ({
 test('create room dialog includes key tooltip text', () => {
   const html = renderToStaticMarkup(<CreateRoomDialog open onOpenChange={() => {}} />)
   expect(html).toContain('Der Spielmodus bestimmt die Teamaufteilung')
-  expect(html).toContain('Wenn aktiviert, wird bei Timeout automatisch gewertet')
+  expect(html).toContain('Wenn die Zeit abläuft, wird automatisch die beste Kategorie gewählt')
 })
