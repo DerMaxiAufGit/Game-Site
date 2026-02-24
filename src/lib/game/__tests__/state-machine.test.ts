@@ -31,6 +31,22 @@ describe('createInitialState', () => {
     expect(state.dice).toEqual([1, 1, 1, 1, 1])
     expect(state.winner).toBe(null)
   })
+
+  it('uses ruleset maxRolls when provided', () => {
+    const players = [
+      { userId: 'user1', displayName: 'Alice' },
+      { userId: 'user2', displayName: 'Bob' }
+    ]
+    const settings = {
+      turnTimer: 60,
+      afkThreshold: 3,
+      kniffelRuleset: { maxRolls: 4 }
+    }
+
+    const state = createInitialState(players, settings)
+
+    expect(state.rollsRemaining).toBe(4)
+  })
 })
 
 describe('applyAction - PLAYER_READY', () => {
@@ -444,6 +460,28 @@ describe('advanceTurn', () => {
 
     expect(newState.round).toBe(2)
     expect(newState.currentPlayerIndex).toBe(0)
+  })
+
+  it('resets rollsRemaining based on ruleset maxRolls', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      {
+        turnTimer: 60,
+        afkThreshold: 3,
+        kniffelRuleset: { maxRolls: 4 }
+      }
+    )
+
+    state.phase = 'rolling'
+    state.currentPlayerIndex = 0
+    state.rollsRemaining = 1
+
+    const newState = advanceTurn(state)
+
+    expect(newState.rollsRemaining).toBe(4)
   })
 })
 
