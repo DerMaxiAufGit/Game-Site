@@ -28,7 +28,22 @@ describe('Poker State Machine', () => {
         blindInterval: 0,
         turnTimer: 30000
       };
-      const deck = shuffleDeck(createDeck());
+      const riggedCards = [
+        { rank: 'A', suit: 'spades' },
+        { rank: 'A', suit: 'diamonds' },
+        { rank: 'K', suit: 'spades' },
+        { rank: 'K', suit: 'diamonds' },
+        { rank: '2', suit: 'clubs' },
+        { rank: '3', suit: 'clubs' },
+        { rank: '4', suit: 'hearts' },
+        { rank: '5', suit: 'clubs' },
+        { rank: '9', suit: 'hearts' }
+      ];
+      const riggedSet = new Set(riggedCards.map(card => `${card.rank}-${card.suit}`));
+      const deck = [
+        ...riggedCards,
+        ...createDeck().filter(card => !riggedSet.has(`${card.rank}-${card.suit}`))
+      ];
 
       const state = createPokerState(players, settings, deck);
 
