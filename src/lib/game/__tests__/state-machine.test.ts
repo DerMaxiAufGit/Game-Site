@@ -537,6 +537,34 @@ describe('applyAction - CHOOSE_CATEGORY', () => {
   })
 })
 
+describe('applyAction - USE_JOKER', () => {
+  it('consumes joker and adjusts die', () => {
+    let state = createInitialState(
+      [
+        { userId: 'user1', displayName: 'Alice' },
+        { userId: 'user2', displayName: 'Bob' }
+      ],
+      {
+        turnTimer: 60,
+        afkThreshold: 3,
+        kniffelRuleset: { jokerCount: 1, jokerMaxPerTurn: 1 }
+      }
+    )
+
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user1') as GameState
+    state = applyAction(state, { type: 'PLAYER_READY' }, 'user2') as GameState
+    state = { ...state, dice: [1, 2, 3, 4, 5], rollsRemaining: 2 }
+
+    const result = applyAction(state, { type: 'USE_JOKER', dieIndex: 0, delta: 1 }, 'user1')
+
+    expect(result).not.toBeInstanceOf(Error)
+    if (!(result instanceof Error)) {
+      expect(result.dice[0]).toBe(2)
+      expect(result.modifiers?.jokersByUserId?.user1).toBe(0)
+    }
+  })
+})
+
 describe('advanceTurn', () => {
   it('advances to next player', () => {
     let state = createInitialState(

@@ -19,6 +19,7 @@ export type GameAction =
   | { type: 'PLAYER_READY' }
   | { type: 'ROLL_DICE'; keptDice: boolean[]; newDice: DiceValue[] }
   | { type: 'CHOOSE_CATEGORY'; category: ScoreCategory; auto?: boolean; columnIndex?: number }
+  | { type: 'USE_JOKER'; dieIndex: number; delta: 1 | -1 }
   | { type: 'PLAYER_DISCONNECT'; userId: string }
   | { type: 'PLAYER_RECONNECT'; userId: string }
 
@@ -67,12 +68,21 @@ export function createInitialState(
   }))
 
   const maxRolls = ruleset.maxRolls || 3
+  const jokersByUserId = ruleset.jokerCount > 0
+    ? Object.fromEntries(players.map(player => [player.userId, ruleset.jokerCount]))
+    : undefined
+  const jokersUsedThisTurnByUserId = ruleset.jokerCount > 0
+    ? Object.fromEntries(players.map(player => [player.userId, 0]))
+    : undefined
 
   return {
     phase: 'waiting',
     kniffelMode: settings.kniffelMode || 'classic',
     ruleset,
     rulesVersion: 1,
+    modifiers: jokersByUserId
+      ? { jokersByUserId, jokersUsedThisTurnByUserId }
+      : undefined,
     teams: settings.teams || [],
     players: playerStates,
     spectators: [],
@@ -111,6 +121,9 @@ export function applyAction(
     case 'CHOOSE_CATEGORY':
       return handleChooseCategory(state, userId, action.category, action.auto, action.columnIndex)
 
+    case 'USE_JOKER':
+      return handleUseJoker(state, userId, action.dieIndex, action.delta)
+
     case 'PLAYER_DISCONNECT':
       return handlePlayerDisconnect(state, action.userId)
 
@@ -140,6 +153,7 @@ export function isValidAction(
 export function advanceTurn(state: GameState): GameState {
   const maxRolls = state.ruleset?.maxRolls || 3
   const nextPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length
+  const nextPlayerId = state.players[nextPlayerIndex]?.userId
 
   // Check if we completed a full round
   let newRound = state.round
@@ -157,7 +171,16 @@ export function advanceTurn(state: GameState): GameState {
     rollsRemaining: maxRolls,
     keptDice: [false, false, false, false, false],
     round: newRound,
-    turnStartedAt: Date.now()
+    turnStartedAt: Date.now(),
+    modifiers: state.modifiers?.jokersUsedThisTurnByUserId && nextPlayerId
+      ? {
+        ...state.modifiers,
+        jokersUsedThisTurnByUserId: {
+          ...state.modifiers.jokersUsedThisTurnByUserId,
+          [nextPlayerId]: 0
+        }
+      }
+      : state.modifiers
   }
 
   // Check if game should end (after round 13)
@@ -364,6 +387,57 @@ function handleChooseCategory(
 
   // Advance turn
   return advanceTurn(newState)
+}
+
+function handleUseJoker(
+  state: GameState,
+  userId: string,
+  dieIndex: number,
+  delta: 1 | -1
+): GameState | Error {
+  if (state.phase !== 'rolling') {
+    return new Error('Not in rolling phase')
+  }
+
+  const currentPlayer = state.players[state.currentPlayerIndex]
+  if (currentPlayer.userId !== userId) {
+    return new Error('Not your turn')
+  }
+
+  const ruleset = state.ruleset || resolveKniffelRuleset('classic')
+  const jokers = state.modifiers?.jokersByUserId?.[userId] ?? 0
+  if (jokers <= 0) {
+    return new Error('No jokers remaining')
+  }
+
+  const usedThisTurn = state.modifiers?.jokersUsedThisTurnByUserId?.[userId] ?? 0
+  if (ruleset.jokerMaxPerTurn > 0 && usedThisTurn >= ruleset.jokerMaxPerTurn) {
+    return new Error('Joker limit reached for this turn')
+  }
+
+  if (dieIndex < 0 || dieIndex >= state.dice.length) {
+    return new Error('Invalid die index')
+  }
+
+  const nextValue = Math.min(6, Math.max(1, state.dice[dieIndex] + delta)) as DiceValue
+  const nextDice = [...state.dice] as DiceValues
+  nextDice[dieIndex] = nextValue
+
+  return {
+    ...state,
+    dice: nextDice,
+    modifiers: {
+      ...state.modifiers,
+      jokersByUserId: {
+        ...state.modifiers?.jokersByUserId,
+        [userId]: jokers - 1
+      },
+      jokersUsedThisTurnByUserId: {
+        ...state.modifiers?.jokersUsedThisTurnByUserId,
+        [userId]: usedThisTurn + 1
+      }
+    }
+  }
 }
 
 function handlePlayerDisconnect(state: GameState, userId: string): GameState | Error {
